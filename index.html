@@ -1,15 +1,24 @@
 <!doctype html>
 <html lang="es">
+
 <head>
+
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080a0f">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<meta
+  name="theme-color"
+  content="#080a0f">
 
 <title>Monitor de habitación</title>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
 <style>
+
 :root{
   color-scheme:dark;
   --bg:#080a0f;
@@ -125,7 +134,11 @@ main{
   justify-content:center;
   padding:25px;
   text-align:center;
-  background:radial-gradient(circle at 50% 40%,#171d28,#000 75%);
+  background:radial-gradient(
+    circle at 50% 40%,
+    #171d28,
+    #000 75%
+  );
 }
 
 .placeholder.hidden{
@@ -275,7 +288,9 @@ button:active{
   }
 
 }
+
 </style>
+
 </head>
 
 <body>
@@ -284,12 +299,20 @@ button:active{
 
 <header>
 
-  <h1>Monitor de habitación</h1>
+<h1>Monitor de habitación</h1>
 
-  <div class="status">
-    <span id="dot" class="dot"></span>
-    <span id="state">Listo</span>
-  </div>
+<div class="status">
+
+<span
+  id="dot"
+  class="dot">
+</span>
+
+<span id="state">
+  Listo
+</span>
+
+</div>
 
 </header>
 
@@ -297,36 +320,40 @@ button:active{
 
 <section class="viewer">
 
-  <video
-    id="video"
-    autoplay
-    playsinline
-    muted
-    preload="auto">
-  </video>
+<video
+  id="video"
+  autoplay
+  playsinline
+  muted
+  preload="auto">
+</video>
 
-  <div id="placeholder" class="placeholder">
+<div
+  id="placeholder"
+  class="placeholder">
 
-    <div class="card">
+<div class="card">
 
-      <div class="icon">📷</div>
+<div class="icon">
+  📷
+</div>
 
-      <h2 id="placeholderTitle">
-        Monitor de habitación
-      </h2>
+<h2 id="placeholderTitle">
+  Monitor de habitación
+</h2>
 
-      <p id="placeholderText">
-        Selecciona el modo que quieres utilizar.
-      </p>
+<p id="placeholderText">
+  Selecciona el modo que quieres utilizar.
+</p>
 
-      <div
-        id="pinDisplay"
-        class="pin hidden">
-      </div>
+<div
+  id="pinDisplay"
+  class="pin hidden">
+</div>
 
-    </div>
+</div>
 
-  </div>
+</div>
 
 </section>
 
@@ -335,17 +362,21 @@ button:active{
 
 <div class="controls">
 
-  <button
-    id="cameraMode"
-    class="primary">
-    📷 Modo cámara
-  </button>
+<button
+  id="cameraMode"
+  class="primary">
 
-  <button
-    id="viewerMode"
-    class="secondary">
-    👁 Modo visor
-  </button>
+  📷 Modo cámara
+
+</button>
+
+<button
+  id="viewerMode"
+  class="secondary">
+
+  👁 Modo visor
+
+</button>
 
 </div>
 
@@ -356,23 +387,29 @@ button:active{
   id="cameraControls"
   class="controls hidden">
 
-  <button
-    id="start"
-    class="primary">
-    Activar cámara
-  </button>
+<button
+  id="start"
+  class="primary">
 
-  <button
-    id="flip"
-    class="secondary">
-    Cambiar cámara
-  </button>
+  Activar cámara
 
-  <button
-    id="stop"
-    class="secondary">
-    Apagar
-  </button>
+</button>
+
+<button
+  id="flip"
+  class="secondary">
+
+  Cambiar cámara
+
+</button>
+
+<button
+  id="stop"
+  class="secondary">
+
+  Apagar
+
+</button>
 
 </div>
 
@@ -383,33 +420,35 @@ button:active{
   id="remotePanel"
   class="hidden">
 
-  <input
-    id="room"
-    type="tel"
-    inputmode="numeric"
-    maxlength="4"
-    pattern="[0-9]{4}"
-    placeholder="0000"
-    autocomplete="off">
+<input
+  id="room"
+  type="tel"
+  inputmode="numeric"
+  maxlength="4"
+  pattern="[0-9]{4}"
+  placeholder="0000"
+  autocomplete="off">
 
-  <button
-    id="connect"
-    class="primary">
-    Conectar
-  </button>
+<button
+  id="connect"
+  class="primary">
+
+  Conectar
+
+</button>
 
 </div>
 
 
 <div class="info">
 
-  <div id="mainInfo">
-    Selecciona un modo para comenzar.
-  </div>
+<div id="mainInfo">
+  Selecciona un modo para comenzar.
+</div>
 
-  <div id="quality"></div>
+<div id="quality"></div>
 
-  <div id="error"></div>
+<div id="error"></div>
 
 </div>
 
@@ -433,8 +472,9 @@ const CAMERA_FPS = 30;
 
 /*
   2,5 Mbps máximo.
-  Está pensado para mantener la fluidez.
+  Pensado para mantener buena fluidez.
 */
+
 const MAX_BITRATE = 2500000;
 
 
@@ -487,7 +527,9 @@ const room =
 ========================================================= */
 
 let peer = null;
+
 let stream = null;
+
 let activeCall = null;
 
 let mode = null;
@@ -499,11 +541,12 @@ let cameraPin = null;
 let statsTimer = null;
 
 let lastBytesReceived = 0;
+
 let lastStatsTime = 0;
 
 
 /* =========================================================
-   UTILIDADES
+   ESTADO
 ========================================================= */
 
 function setState(text,type="normal"){
@@ -527,13 +570,15 @@ function setState(text,type="normal"){
 }
 
 
+/* =========================================================
+   PLACEHOLDER
+========================================================= */
+
 function showPlaceholder(title,text){
 
-  placeholderTitle.textContent =
-    title;
+  placeholderTitle.textContent = title;
 
-  placeholderText.textContent =
-    text;
+  placeholderText.textContent = text;
 
   placeholder.classList.remove(
     "hidden"
@@ -550,6 +595,10 @@ function hidePlaceholder(){
 
 }
 
+
+/* =========================================================
+   ERRORES
+========================================================= */
 
 function errorText(error){
 
@@ -576,10 +625,17 @@ function errorText(error){
 
 
 /* =========================================================
-   GENERAR PIN DE 4 CIFRAS
+   GENERAR PIN DE EXACTAMENTE 4 CIFRAS
 ========================================================= */
 
 function generatePin(){
+
+  /*
+    1000 - 9999
+
+    Siempre serán exactamente
+    cuatro números.
+  */
 
   return String(
     Math.floor(
@@ -592,23 +648,75 @@ function generatePin(){
 
 
 /* =========================================================
-   CREAR PEER CON PIN
+   CREAR PEER DE CÁMARA
 ========================================================= */
 
 function createCameraPeer(){
 
-  return new Promise(
-    function(resolve,reject){
+  return new Promise(function(resolve,reject){
+
+    function tryCreate(attempt){
+
+      /*
+        Evitamos intentos infinitos.
+      */
+
+      if(attempt > 20){
+
+        reject(
+          new Error(
+            "No se pudo obtener un código de 4 cifras."
+          )
+        );
+
+        return;
+      }
+
+
+      /*
+        Generar código.
+      */
 
       const pin =
         generatePin();
 
 
+      /*
+        Comprobación adicional.
+      */
+
+      if(!/^[0-9]{4}$/.test(pin)){
+
+        setTimeout(
+          function(){
+
+            tryCreate(
+              attempt + 1
+            );
+
+          },
+          100
+        );
+
+        return;
+      }
+
+
       log(
-        "Solicitando PIN " +
+        "Solicitando código de 4 cifras: " +
         pin
       );
 
+
+      /*
+        IMPORTANTE:
+
+        Aquí PeerJS recibe directamente
+        el código de 4 cifras.
+
+        No se utiliza new Peer()
+        sin ID para la cámara.
+      */
 
       const newPeer =
         new Peer(
@@ -635,6 +743,10 @@ function createCameraPeer(){
       let finished = false;
 
 
+      /* -----------------------------------------
+         PEER ABIERTO
+      ----------------------------------------- */
+
       newPeer.on(
         "open",
         function(id){
@@ -643,13 +755,56 @@ function createCameraPeer(){
             return;
           }
 
+
+          /*
+            Comprobación final.
+
+            Nunca aceptamos ni mostramos
+            un ID que no tenga 4 cifras.
+          */
+
+          if(!/^[0-9]{4}$/.test(id)){
+
+            try{
+              newPeer.destroy();
+            }catch(e){}
+
+            finished = true;
+
+            reject(
+              new Error(
+                "PeerJS no ha creado un código válido de 4 cifras."
+              )
+            );
+
+            return;
+          }
+
+
           finished = true;
+
+
+          /*
+            Guardar Peer.
+          */
 
           peer =
             newPeer;
 
+
+          /*
+            Guardar PIN confirmado.
+          */
+
           cameraPin =
             id;
+
+
+          log(
+            "Código creado correctamente: " +
+            id
+          );
+
 
           resolve(id);
 
@@ -657,59 +812,71 @@ function createCameraPeer(){
       );
 
 
+      /* -----------------------------------------
+         ERROR
+      ----------------------------------------- */
+
       newPeer.on(
         "error",
         function(error){
 
           /*
             Si el PIN ya está ocupado,
-            generamos otro automáticamente.
+            crear otro automáticamente.
           */
 
           if(
             error &&
-            (
-              error.type ===
-                "unavailable-id" ||
-              error.type ===
-                "server-error"
-            )
+            error.type === "unavailable-id"
           ){
+
+            log(
+              "El código " +
+              pin +
+              " ya está ocupado. Generando otro..."
+            );
+
 
             try{
               newPeer.destroy();
             }catch(e){}
 
+
             if(!finished){
 
               finished = true;
 
-              /*
-                Volver a intentarlo
-                con otro PIN.
-              */
 
               setTimeout(
                 function(){
 
-                  createCameraPeer()
-                    .then(resolve)
-                    .catch(reject);
+                  tryCreate(
+                    attempt + 1
+                  );
 
                 },
-                300
+                200
               );
 
             }
 
             return;
-
           }
 
+
+          /*
+            Otros errores.
+          */
 
           if(!finished){
 
             finished = true;
+
+
+            try{
+              newPeer.destroy();
+            }catch(e){}
+
 
             reject(error);
 
@@ -719,19 +886,37 @@ function createCameraPeer(){
       );
 
     }
-  );
+
+
+    /*
+      Primer intento.
+    */
+
+    tryCreate(1);
+
+  });
 
 }
 
 
 /* =========================================================
-   PEER VISOR
+   CREAR PEER DEL VISOR
 ========================================================= */
 
 function createViewerPeer(){
 
   return new Promise(
     function(resolve,reject){
+
+      /*
+        El visor puede tener un ID interno
+        generado automáticamente.
+
+        El usuario NO lo verá.
+
+        El código que introduce el usuario
+        sigue siendo de 4 cifras.
+      */
 
       const newPeer =
         new Peer(
@@ -800,7 +985,7 @@ function log(message){
 
 
 /* =========================================================
-   OPTIMIZAR EMISIÓN WEBRTC
+   OPTIMIZAR WEBRTC
 ========================================================= */
 
 async function optimizeSender(){
@@ -858,7 +1043,7 @@ async function optimizeSender(){
 
 
       /*
-        Bitrate máximo de 2,5 Mbps.
+        Máximo 2,5 Mbps.
       */
 
       encoding.maxBitrate =
@@ -934,6 +1119,7 @@ async function startCamera(){
 
   quality.textContent = "";
 
+
   stopConnection();
 
 
@@ -951,28 +1137,41 @@ async function startCamera(){
 
   try{
 
+    /*
+      Solicitar cámara.
+    */
+
     stream =
       await navigator.mediaDevices.getUserMedia({
 
         video:{
 
           width:{
-            ideal:CAMERA_WIDTH
+            ideal:
+              CAMERA_WIDTH
           },
 
           height:{
-            ideal:CAMERA_HEIGHT
+            ideal:
+              CAMERA_HEIGHT
           },
 
           frameRate:{
-            ideal:CAMERA_FPS,
-            max:CAMERA_FPS
+            ideal:
+              CAMERA_FPS,
+
+            max:
+              CAMERA_FPS
           },
 
           facingMode:
             rearCamera
-              ? {ideal:"environment"}
-              : {ideal:"user"}
+              ? {
+                  ideal:"environment"
+                }
+              : {
+                  ideal:"user"
+                }
 
         },
 
@@ -981,6 +1180,10 @@ async function startCamera(){
       });
 
 
+    /*
+      Configurar track.
+    */
+
     const track =
       stream.getVideoTracks()[0];
 
@@ -988,8 +1191,10 @@ async function startCamera(){
     if(track){
 
       try{
+
         track.contentHint =
           "motion";
+
       }catch(e){}
 
 
@@ -1011,6 +1216,10 @@ async function startCamera(){
     }
 
 
+    /*
+      Mostrar cámara local.
+    */
+
     video.srcObject =
       stream;
 
@@ -1024,16 +1233,32 @@ async function startCamera(){
     );
 
 
-    hidePlaceholder();
-
-
     /*
-      Crear PIN de 4 cifras.
+      Crear código REAL de 4 cifras.
     */
 
     const pin =
       await createCameraPeer();
 
+
+    /*
+      Comprobación final.
+    */
+
+    if(
+      !/^[0-9]{4}$/.test(pin)
+    ){
+
+      throw new Error(
+        "El código generado no tiene 4 cifras."
+      );
+
+    }
+
+
+    /*
+      Mostrar PIN.
+    */
 
     pinDisplay.textContent =
       pin;
@@ -1053,9 +1278,7 @@ async function startCamera(){
 
 
     /*
-      El vídeo local sigue visible.
-      Ocultamos el PIN cuando empieza
-      la visualización local.
+      Mantener vídeo local visible.
     */
 
     hidePlaceholder();
@@ -1073,8 +1296,9 @@ async function startCamera(){
       pin +
       "</strong>";
 
+
     /*
-      Escuchar llamadas.
+      Esperar llamadas.
     */
 
     peer.on(
@@ -1087,9 +1311,7 @@ async function startCamera(){
 
 
         if(!stream){
-
           return;
-
         }
 
 
@@ -1103,10 +1325,19 @@ async function startCamera(){
         );
 
 
+        /*
+          Responder con la cámara real.
+        */
+
         incomingCall.answer(
           stream
         );
 
+
+        /*
+          Optimizar después de establecer
+          la conexión.
+        */
 
         setTimeout(
           optimizeSender,
@@ -1167,13 +1398,17 @@ async function startCamera(){
 
 function startViewer(){
 
-  mode = "viewer";
+  mode =
+    "viewer";
+
 
   stopConnection();
+
 
   cameraControls.classList.add(
     "hidden"
   );
+
 
   remotePanel.classList.remove(
     "hidden"
@@ -1195,6 +1430,21 @@ function startViewer(){
   mainInfo.textContent =
     "El código tiene 4 cifras.";
 
+
+  /*
+    Colocar automáticamente el cursor
+    en el campo del código.
+  */
+
+  setTimeout(
+    function(){
+
+      room.focus();
+
+    },
+    100
+  );
+
 }
 
 
@@ -1209,11 +1459,12 @@ async function connectViewer(){
 
 
   /*
-    Solo aceptamos exactamente
-    cuatro números.
+    SOLO cuatro números.
   */
 
-  if(!/^[0-9]{4}$/.test(pin)){
+  if(
+    !/^[0-9]{4}$/.test(pin)
+  ){
 
     errorBox.textContent =
       "El código debe tener exactamente 4 cifras.";
@@ -1243,28 +1494,36 @@ async function connectViewer(){
   try{
 
     /*
-      Peer del visor.
+      Crear Peer del visor.
     */
 
     await createViewerPeer();
 
 
     /*
-      Stream auxiliar.
+      Crear stream auxiliar.
+
+      PeerJS necesita que el visor
+      proporcione un stream para iniciar
+      correctamente la llamada.
     */
 
     const canvas =
       document.createElement("canvas");
 
+
     canvas.width = 2;
+
     canvas.height = 2;
 
 
     const ctx =
       canvas.getContext("2d");
 
+
     ctx.fillStyle =
       "#000";
+
 
     ctx.fillRect(
       0,
@@ -1279,10 +1538,17 @@ async function connectViewer(){
 
 
     log(
-      "Llamando al PIN " +
+      "Llamando al código " +
       pin
     );
 
+
+    /*
+      MUY IMPORTANTE:
+
+      Aquí se utiliza directamente
+      el PIN de 4 cifras.
+    */
 
     activeCall =
       peer.call(
@@ -1299,6 +1565,10 @@ async function connectViewer(){
 
     }
 
+
+    /*
+      Vídeo recibido.
+    */
 
     activeCall.on(
       "stream",
@@ -1339,6 +1609,7 @@ async function connectViewer(){
 
         updateQuality();
 
+
         startStats();
 
 
@@ -1349,11 +1620,16 @@ async function connectViewer(){
     );
 
 
+    /*
+      Conexión cerrada.
+    */
+
     activeCall.on(
       "close",
       function(){
 
         stopStats();
+
 
         setState(
           "Desconectado",
@@ -1369,6 +1645,10 @@ async function connectViewer(){
       }
     );
 
+
+    /*
+      Error.
+    */
 
     activeCall.on(
       "error",
@@ -1397,6 +1677,7 @@ async function connectViewer(){
 
     errorBox.textContent =
       "No se pudo conectar. Comprueba que el código sea correcto.";
+
 
     log(
       errorText(error)
@@ -1461,7 +1742,8 @@ function startStats(){
             await activeCall.peerConnection.getStats();
 
 
-          let inbound = null;
+          let inbound =
+            null;
 
 
           stats.forEach(
@@ -1475,7 +1757,8 @@ function startStats(){
                 )
               ){
 
-                inbound = report;
+                inbound =
+                  report;
 
               }
 
@@ -1492,7 +1775,8 @@ function startStats(){
             performance.now();
 
 
-          let bitrate = 0;
+          let bitrate =
+            0;
 
 
           if(lastStatsTime){
@@ -1526,6 +1810,7 @@ function startStats(){
 
           lastBytesReceived =
             inbound.bytesReceived || 0;
+
 
           lastStatsTime =
             now;
@@ -1586,14 +1871,18 @@ function stopStats(){
       statsTimer
     );
 
-    statsTimer = null;
+    statsTimer =
+      null;
 
   }
 
 
-  lastBytesReceived = 0;
+  lastBytesReceived =
+    0;
 
-  lastStatsTime = 0;
+
+  lastStatsTime =
+    0;
 
 }
 
@@ -1610,10 +1899,14 @@ function stopConnection(){
   if(activeCall){
 
     try{
+
       activeCall.close();
+
     }catch(e){}
 
-    activeCall = null;
+
+    activeCall =
+      null;
 
   }
 
@@ -1621,10 +1914,14 @@ function stopConnection(){
   if(peer){
 
     try{
+
       peer.destroy();
+
     }catch(e){}
 
-    peer = null;
+
+    peer =
+      null;
 
   }
 
@@ -1646,13 +1943,17 @@ function stopAll(){
       function(track){
 
         try{
+
           track.stop();
+
         }catch(e){}
 
       }
     );
 
-    stream = null;
+
+    stream =
+      null;
 
   }
 
@@ -1661,9 +1962,21 @@ function stopAll(){
     null;
 
 
-  quality.textContent = "";
+  quality.textContent =
+    "";
 
-  errorBox.textContent = "";
+
+  errorBox.textContent =
+    "";
+
+
+  pinDisplay.textContent =
+    "";
+
+
+  pinDisplay.classList.add(
+    "hidden"
+  );
 
 
   setState(
@@ -1680,7 +1993,7 @@ function stopAll(){
 
 
 /* =========================================================
-   BOTONES
+   BOTÓN MODO CÁMARA
 ========================================================= */
 
 document.getElementById(
@@ -1692,14 +2005,20 @@ function(){
     "hidden"
   );
 
+
   cameraControls.classList.remove(
     "hidden"
   );
+
 
   startCamera();
 
 };
 
+
+/* =========================================================
+   BOTÓN MODO VISOR
+========================================================= */
 
 document.getElementById(
   "viewerMode"
@@ -1708,10 +2027,15 @@ function(){
 
   stopAll();
 
+
   startViewer();
 
 };
 
+
+/* =========================================================
+   BOTÓN ACTIVAR CÁMARA
+========================================================= */
 
 document.getElementById(
   "start"
@@ -1723,6 +2047,10 @@ function(){
 };
 
 
+/* =========================================================
+   BOTÓN APAGAR
+========================================================= */
+
 document.getElementById(
   "stop"
 ).onclick =
@@ -1733,6 +2061,10 @@ function(){
 };
 
 
+/* =========================================================
+   CAMBIAR CÁMARA
+========================================================= */
+
 document.getElementById(
   "flip"
 ).onclick =
@@ -1741,10 +2073,15 @@ function(){
   rearCamera =
     !rearCamera;
 
+
   startCamera();
 
 };
 
+
+/* =========================================================
+   CONECTAR
+========================================================= */
 
 document.getElementById(
   "connect"
@@ -1755,6 +2092,10 @@ function(){
 
 };
 
+
+/* =========================================================
+   CAMPO PIN
+========================================================= */
 
 /*
   Solo permitir números.
@@ -1773,11 +2114,17 @@ room.addEventListener(
 );
 
 
+/*
+  Enter = conectar.
+*/
+
 room.addEventListener(
   "keydown",
   function(event){
 
-    if(event.key === "Enter"){
+    if(
+      event.key === "Enter"
+    ){
 
       connectViewer();
 
@@ -1797,9 +2144,13 @@ document.addEventListener(
 
     try{
 
-      if(!document.fullscreenElement){
+      if(
+        !document.fullscreenElement
+      ){
 
-        await document.documentElement.requestFullscreen();
+        await document
+          .documentElement
+          .requestFullscreen();
 
       }
 
@@ -1817,6 +2168,7 @@ setState(
   "Listo"
 );
 
+
 showPlaceholder(
   "Monitor de habitación",
   "En el móvil de la habitación pulsa «Modo cámara». En el otro móvil pulsa «Modo visor»."
@@ -1825,4 +2177,5 @@ showPlaceholder(
 </script>
 
 </body>
+
 </html>
