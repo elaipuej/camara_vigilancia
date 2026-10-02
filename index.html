@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="es">
 <head>
@@ -21,9 +20,7 @@
   --danger:#ff6675
 }
 
-*{
-  box-sizing:border-box
-}
+*{box-sizing:border-box}
 
 html,body{
   margin:0;
@@ -99,8 +96,11 @@ main{
 video{
   width:100%;
   height:100%;
-  object-fit:cover;
-  transform:scaleX(1)
+  object-fit:cover
+}
+
+#cameraVideo{
+  display:none
 }
 
 .placeholder{
@@ -176,7 +176,8 @@ button{
 .error{
   color:#ff9aa4;
   font-size:13px;
-  margin:8px 0 0
+  margin:8px 0 0;
+  word-break:break-word
 }
 
 .note{
@@ -187,33 +188,37 @@ button{
   background:#0d1016
 }
 
+#remotePanel{
+  padding:14px 16px
+}
+
 #room{
   padding:12px;
   border-radius:10px;
-  border:1px solid #252c38;
+  border:1px solid var(--line);
   background:#11151d;
   color:#f4f7fb;
   width:100%;
   margin-bottom:8px;
-  font:inherit
+  font:inherit;
+  outline:none
+}
+
+#room:focus{
+  border-color:var(--accent)
+}
+
+#cameraCode{
+  color:var(--accent);
+  font-weight:700;
+  word-break:break-all
 }
 
 @media (orientation:landscape){
-  header{
-    height:52px
-  }
-
-  .viewer{
-    min-height:240px
-  }
-
-  .controls{
-    padding:9px 12px
-  }
-
-  .note{
-    display:none
-  }
+  header{height:52px}
+  .viewer{min-height:240px}
+  .controls{padding:9px 12px}
+  .note{display:none}
 }
 </style>
 </head>
@@ -237,15 +242,18 @@ button{
 
   <video id="video" autoplay playsinline muted></video>
 
+  <!-- Vídeo auxiliar utilizado únicamente para iniciar la llamada WebRTC -->
+  <video id="cameraVideo" autoplay playsinline muted></video>
+
   <div id="placeholder" class="placeholder">
 
     <div class="card">
 
       <div class="cam-icon">◉</div>
 
-      <h2>Listo para monitorizar</h2>
+      <h2 id="placeholderTitle">Listo para monitorizar</h2>
 
-      <p>
+      <p id="placeholderText">
         Pulsa «Activar cámara». El navegador te pedirá permiso
         y se intentará usar la cámara trasera del móvil.
       </p>
@@ -281,21 +289,23 @@ button{
 <div class="controls">
 
   <button id="cameraMode" class="primary">
-    Modo cámara
+    📷 Modo cámara
   </button>
 
   <button id="viewerMode" class="secondary">
-    Ver otra cámara
+    👁 Ver otra cámara
   </button>
 
 </div>
 
-<div id="remotePanel" class="note" style="display:none">
+<div id="remotePanel" style="display:none">
 
   <input
     id="room"
-    placeholder="Código de habitación"
+    placeholder="Código de la cámara"
     autocomplete="off"
+    autocapitalize="none"
+    spellcheck="false"
   >
 
   <button
@@ -309,8 +319,10 @@ button{
 </div>
 
 <div class="note">
-  En modo cámara, comparte el código que aparece al conectarse.
-  En el otro móvil introduce ese código para ver el vídeo.
+  <span id="cameraInfo">
+    En modo cámara aparecerá un código. Introduce ese código
+    en el segundo móvil para ver la cámara.
+  </span>
 </div>
 
 </main>
@@ -319,32 +331,114 @@ button{
 
 <script>
 
+"use strict";
+
+/* =========================================================
+   VARIABLES
+========================================================= */
+
 let stream = null;
 let rear = true;
 let peer = null;
 let currentMode = "camera";
+let currentCall = null;
+let dummyStream = null;
 
 const video = document.getElementById("video");
 const placeholder = document.getElementById("placeholder");
+const placeholderTitle = document.getElementById("placeholderTitle");
+const placeholderText = document.getElementById("placeholderText");
+
 const state = document.getElementById("state");
 const dot = document.getElementById("dot");
 const error = document.getElementById("error");
+
 const room = document.getElementById("room");
 const remotePanel = document.getElementById("remotePanel");
+const cameraInfo = document.getElementById("cameraInfo");
 
 
-/* =========================
-   CÁMARA
-========================= */
+/* =========================================================
+   UTILIDADES
+========================================================= */
+
+function showError(message){
+  error.textContent = message || "";
+}
+
+function setLive(text){
+  state.textContent = text;
+  dot.classList.add("live");
+}
+
+function setOffline(text){
+  state.textContent = text;
+  dot.classList.remove("live");
+}
+
+function showPlaceholder(title,text){
+  placeholderTitle.textContent = title;
+  placeholderText.textContent = text;
+  placeholder.classList.remove("hidden");
+}
+
+function hidePlaceholder(){
+  placeholder.classList.add("hidden");
+}
+
+
+/* =========================================================
+   CREAR PEER
+========================================================= */
+
+function createPeer(){
+
+  if(peer){
+
+    try{
+      peer.destroy();
+    }catch(e){}
+
+    peer = null;
+  }
+
+  peer = new Peer({
+
+    config:{
+      iceServers:[
+        {
+          urls:"stun:stun.l.google.com:19302"
+        },
+        {
+          urls:"stun:stun1.l.google.com:19302"
+        }
+      ]
+    }
+
+  });
+
+  return peer;
+}
+
+
+/* =========================================================
+   INICIAR CÁMARA
+========================================================= */
 
 async function startCamera(){
 
-  error.textContent = "";
+  currentMode = "camera";
 
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+  showError("");
 
-    error.textContent =
-      "Este navegador no permite acceder a la cámara aquí. Usa HTTPS.";
+  if(
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getUserMedia
+  ){
+
+    showError(
+      "Este navegador no permite acceder a la cámara. Comprueba que estás usando HTTPS."
+    );
 
     return;
   }
@@ -357,11 +451,11 @@ async function startCamera(){
 
       video:{
         facingMode: rear
-          ? { ideal:"environment" }
-          : { ideal:"user" },
+          ? {ideal:"environment"}
+          : {ideal:"user"},
 
-        width:{ ideal:1280 },
-        height:{ ideal:720 }
+        width:{ideal:1280},
+        height:{ideal:720}
       },
 
       audio:false
@@ -370,78 +464,106 @@ async function startCamera(){
 
     video.srcObject = stream;
 
-    placeholder.classList.add("hidden");
+    hidePlaceholder();
 
-    dot.classList.add("live");
-
-    state.textContent = "Cámara activa";
-
+    setLive("Iniciando cámara...");
 
     /*
-      PeerJS crea el identificador de esta cámara.
+      Creamos el Peer de la cámara.
     */
 
-    peer = new Peer({
+    createPeer();
 
-      config:{
-        iceServers:[
-          {
-            urls:"stun:stun.l.google.com:19302"
-          }
-        ]
-      }
+    peer.on("open",function(id){
 
-    });
+      setLive("Cámara activa");
 
-
-    peer.on("open", function(id){
-
-      state.textContent = "Código: " + id;
-
-      room.value = id;
+      cameraInfo.innerHTML =
+        "Código de esta cámara: <span id='cameraCode'>" +
+        escapeHtml(id) +
+        "</span><br>Comparte este código con el móvil visor.";
 
     });
 
 
     /*
-      Cuando el móvil visor llama,
-      respondemos enviando nuestra cámara.
+      El móvil visor llama a este Peer.
+      Respondemos enviando nuestra cámara real.
     */
 
-    peer.on("call", function(call){
+    peer.on("call",function(call){
 
-      if(currentMode === "camera" && stream){
+      if(
+        currentMode === "camera" &&
+        stream
+      ){
 
-        call.answer(stream);
+        try{
+
+          call.answer(stream);
+
+          currentCall = call;
+
+          call.on("close",function(){
+
+            currentCall = null;
+
+          });
+
+          call.on("error",function(){
+
+            currentCall = null;
+
+          });
+
+        }catch(e){
+
+          showError(
+            "No se pudo responder a la conexión: " +
+            e.message
+          );
+
+        }
 
       }
 
     });
 
 
-    peer.on("error", function(e){
+    peer.on("error",function(e){
 
-      error.textContent =
-        "Error de conexión: " + e.message;
+      showError(
+        "Error de conexión: " +
+        (e.message || "Error desconocido")
+      );
 
     });
 
 
   }catch(e){
 
-    state.textContent = "Cámara apagada";
+    stream = null;
 
-    dot.classList.remove("live");
+    setOffline("Cámara apagada");
 
     if(e.name === "NotAllowedError"){
 
-      error.textContent =
-        "Permiso de cámara denegado. Actívalo en los ajustes del navegador.";
+      showError(
+        "Permiso de cámara denegado. Permite el acceso a la cámara en el navegador."
+      );
+
+    }else if(e.name === "NotFoundError"){
+
+      showError(
+        "No se encontró ninguna cámara."
+      );
 
     }else{
 
-      error.textContent =
-        "No se pudo iniciar la cámara: " + e.message;
+      showError(
+        "No se pudo iniciar la cámara: " +
+        (e.message || e.name)
+      );
 
     }
 
@@ -450,89 +572,316 @@ async function startCamera(){
 }
 
 
-/* =========================
-   APAGAR CÁMARA
-========================= */
+/* =========================================================
+   APAGAR CÁMARA / CONEXIÓN
+========================================================= */
 
 function stopCamera(show = true){
+
+  if(currentCall){
+
+    try{
+      currentCall.close();
+    }catch(e){}
+
+    currentCall = null;
+  }
 
   if(stream){
 
     stream.getTracks().forEach(function(track){
 
-      track.stop();
+      try{
+        track.stop();
+      }catch(e){}
 
     });
 
     stream = null;
-
   }
 
   if(peer){
 
-    peer.destroy();
+    try{
+      peer.destroy();
+    }catch(e){}
 
     peer = null;
-
   }
 
   video.srcObject = null;
 
-  dot.classList.remove("live");
-
-  state.textContent = "Cámara apagada";
+  setOffline("Cámara apagada");
 
   if(show){
 
-    placeholder.classList.remove("hidden");
+    showPlaceholder(
+      "Listo para monitorizar",
+      "Pulsa «Activar cámara». El navegador te pedirá permiso y se intentará usar la cámara trasera del móvil."
+    );
 
   }
+}
+
+
+/* =========================================================
+   PISTA AUXILIAR PARA EL VISOR
+========================================================= */
+
+function createDummyStream(){
+
+  /*
+    PeerJS necesita una MediaStream para iniciar
+    una llamada. Creamos una pista de vídeo silenciosa
+    mediante Canvas.
+
+    Esta pista NO es la cámara del visor.
+    El móvil cámara responderá enviando su vídeo real.
+  */
+
+  try{
+
+    const canvas = document.createElement("canvas");
+
+    canvas.width = 2;
+    canvas.height = 2;
+
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillRect(0,0,2,2);
+
+    const stream = canvas.captureStream(1);
+
+    dummyStream = stream;
+
+    return stream;
+
+  }catch(e){
+
+    return null;
+
+  }
+}
+
+
+/* =========================================================
+   CONECTAR VISOR
+========================================================= */
+
+function connectViewer(){
+
+  const id = room.value.trim();
+
+  if(!id){
+
+    showError(
+      "Escribe el código de la cámara."
+    );
+
+    return;
+  }
+
+  showError("");
+
+  currentMode = "viewer";
+
+  if(currentCall){
+
+    try{
+      currentCall.close();
+    }catch(e){}
+
+    currentCall = null;
+  }
+
+  if(peer){
+
+    try{
+      peer.destroy();
+    }catch(e){}
+
+    peer = null;
+  }
+
+  setOffline("Conectando...");
+
+  showPlaceholder(
+    "Conectando con la cámara",
+    "Espera unos segundos mientras se establece la conexión."
+  );
+
+
+  createPeer();
+
+
+  peer.on("open",function(){
+
+    /*
+      Creamos el stream auxiliar.
+    */
+
+    const localStream = createDummyStream();
+
+    if(!localStream){
+
+      showError(
+        "El navegador no permite iniciar la conexión de vídeo."
+      );
+
+      return;
+    }
+
+
+    try{
+
+      /*
+        Iniciamos la llamada al móvil cámara.
+      */
+
+      const call = peer.call(
+        id,
+        localStream
+      );
+
+      currentCall = call;
+
+
+      if(!call){
+
+        showError(
+          "No se pudo iniciar la llamada."
+        );
+
+        setOffline("Error");
+
+        return;
+      }
+
+
+      /*
+        Cuando llega el vídeo real de la cámara,
+        lo ponemos en el elemento de vídeo.
+      */
+
+      call.on("stream",function(remoteStream){
+
+        video.srcObject = remoteStream;
+
+        hidePlaceholder();
+
+        setLive("Viendo cámara");
+
+      });
+
+
+      call.on("close",function(){
+
+        currentCall = null;
+
+        setOffline("Conexión cerrada");
+
+        showPlaceholder(
+          "Conexión cerrada",
+          "La cámara ha dejado de enviar vídeo."
+        );
+
+      });
+
+
+      call.on("error",function(e){
+
+        currentCall = null;
+
+        setOffline("Error");
+
+        showError(
+          "Error durante la conexión: " +
+          (e.message || "Error desconocido")
+        );
+
+      });
+
+    }catch(e){
+
+      setOffline("Error");
+
+      showError(
+        "No se pudo conectar: " +
+        (e.message || e.name)
+      );
+
+    }
+
+  });
+
+
+  peer.on("error",function(e){
+
+    setOffline("Error");
+
+    let message = e.message || "Error desconocido";
+
+    if(e.type === "peer-unavailable"){
+
+      message =
+        "No se encuentra esa cámara. Comprueba que el móvil de la habitación está encendido y que el código es correcto.";
+
+    }
+
+    if(e.type === "network"){
+
+      message =
+        "Problema de red. Comprueba la conexión a Internet de ambos móviles.";
+
+    }
+
+    showError(
+      message
+    );
+
+  });
 
 }
 
 
-/* =========================
+/* =========================================================
+   ESCAPAR TEXTO
+========================================================= */
+
+function escapeHtml(text){
+
+  return String(text)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+/* =========================================================
    BOTÓN ACTIVAR
-========================= */
+========================================================= */
 
-document.getElementById("start").onclick = function(){
+document.getElementById("start").onclick =
+function(){
 
   startCamera();
 
 };
 
 
-/* =========================
-   INICIO AUTOMÁTICO
-========================= */
-
-window.addEventListener("load", function(){
-
-  startCamera();
-
-});
-
-
-/* =========================
-   APAGAR
-========================= */
-
-document.getElementById("stop").onclick = function(){
-
-  stopCamera();
-
-};
-
-
-/* =========================
+/* =========================================================
    CAMBIAR CÁMARA
-========================= */
+========================================================= */
 
-document.getElementById("flip").onclick = function(){
+document.getElementById("flip").onclick =
+function(){
 
   rear = !rear;
 
-  if(stream){
+  if(currentMode === "camera" && stream){
 
     startCamera();
 
@@ -541,9 +890,21 @@ document.getElementById("flip").onclick = function(){
 };
 
 
-/* =========================
+/* =========================================================
+   APAGAR
+========================================================= */
+
+document.getElementById("stop").onclick =
+function(){
+
+  stopCamera();
+
+};
+
+
+/* =========================================================
    PANTALLA COMPLETA
-========================= */
+========================================================= */
 
 document.getElementById("fullscreen").onclick =
 async function(){
@@ -565,9 +926,9 @@ async function(){
 };
 
 
-/* =========================
+/* =========================================================
    MODO CÁMARA
-========================= */
+========================================================= */
 
 document.getElementById("cameraMode").onclick =
 function(){
@@ -576,144 +937,162 @@ function(){
 
   remotePanel.style.display = "none";
 
+  cameraInfo.innerHTML =
+    "En modo cámara aparecerá un código. Introduce ese código en el segundo móvil para ver la cámara.";
+
+  showError("");
+
   if(!stream){
 
     startCamera();
+
+  }else{
+
+    setLive("Cámara activa");
 
   }
 
 };
 
 
-/* =========================
+/* =========================================================
    MODO VISOR
-========================= */
+========================================================= */
 
 document.getElementById("viewerMode").onclick =
 function(){
 
   currentMode = "viewer";
 
-  stopCamera(false);
+  /*
+    Cerramos cámara local si estuviera activa.
+  */
+
+  if(stream){
+
+    stream.getTracks().forEach(function(track){
+
+      try{
+        track.stop();
+      }catch(e){}
+
+    });
+
+    stream = null;
+
+  }
+
+  if(currentCall){
+
+    try{
+      currentCall.close();
+    }catch(e){}
+
+    currentCall = null;
+  }
+
+  if(peer){
+
+    try{
+      peer.destroy();
+    }catch(e){}
+
+    peer = null;
+  }
+
+  video.srcObject = null;
 
   remotePanel.style.display = "block";
 
-  state.textContent = "Esperando conexión";
+  setOffline("Esperando conexión");
 
-  error.textContent = "";
+  showPlaceholder(
+    "Ver otra cámara",
+    "Introduce el código que aparece en el móvil que está en la habitación."
+  );
+
+  cameraInfo.textContent =
+    "Escribe el código de la cámara y pulsa «Conectar».";
+
+  showError("");
 
 };
 
 
-/* =========================
-   CONECTAR CON OTRA CÁMARA
-========================= */
+/* =========================================================
+   CONECTAR
+========================================================= */
 
 document.getElementById("connect").onclick =
 function(){
 
-  const id = room.value.trim();
+  connectViewer();
 
-  if(!id){
+};
 
-    error.textContent =
-      "Escribe el código de la cámara.";
 
-    return;
+/* =========================================================
+   ENTER EN EL CAMPO
+========================================================= */
+
+room.addEventListener("keydown",function(e){
+
+  if(e.key === "Enter"){
+
+    connectViewer();
 
   }
 
+});
 
-  error.textContent = "";
+
+/* =========================================================
+   LIMPIAR PISTA AUXILIAR AL SALIR
+========================================================= */
+
+window.addEventListener("beforeunload",function(){
+
+  if(dummyStream){
+
+    dummyStream.getTracks().forEach(function(track){
+
+      try{
+        track.stop();
+      }catch(e){}
+
+    });
+
+  }
+
+  if(stream){
+
+    stream.getTracks().forEach(function(track){
+
+      try{
+        track.stop();
+      }catch(e){}
+
+    });
+
+  }
 
   if(peer){
 
-    peer.destroy();
+    try{
+      peer.destroy();
+    }catch(e){}
 
   }
 
-
-  /*
-    Creamos el Peer del móvil visor.
-  */
-
-  peer = new Peer({
-
-    config:{
-      iceServers:[
-        {
-          urls:"stun:stun.l.google.com:19302"
-        }
-      ]
-    }
-
-  });
+});
 
 
-  peer.on("open", function(){
-
-    state.textContent = "Conectando...";
-
-
-    /*
-      Llamamos al móvil cámara.
-      PeerJS permite una llamada sin stream
-      para este caso de recepción.
-    */
-
-    const call = peer.call(id, null);
-
-
-    call.on("stream", function(remoteStream){
-
-      video.srcObject = remoteStream;
-
-      placeholder.classList.add("hidden");
-
-      dot.classList.add("live");
-
-      state.textContent = "Viendo cámara";
-
-    });
-
-
-    call.on("close", function(){
-
-      dot.classList.remove("live");
-
-      state.textContent = "Conexión cerrada";
-
-      placeholder.classList.remove("hidden");
-
-    });
-
-
-    call.on("error", function(e){
-
-      dot.classList.remove("live");
-
-      state.textContent = "Error";
-
-      error.textContent =
-        "No se pudo conectar: " + e.message;
-
-    });
-
-  });
-
-
-  peer.on("error", function(e){
-
-    dot.classList.remove("live");
-
-    state.textContent = "Error";
-
-    error.textContent =
-      "Error de conexión: " + e.message;
-
-  });
-
-};
+/*
+  IMPORTANTE:
+  No arrancamos la cámara automáticamente al cargar la página.
+  En móviles, getUserMedia funciona de forma mucho más fiable
+  cuando se inicia después de una acción del usuario.
+*/
 
 </script>
 
