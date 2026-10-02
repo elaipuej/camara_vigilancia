@@ -1,1 +1,721 @@
 
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a0f">
+<title>Monitor de habitación</title>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#080a0f;
+  --panel:#11151d;
+  --text:#f4f7fb;
+  --muted:#9ba5b4;
+  --line:#252c38;
+  --accent:#69e6a5;
+  --danger:#ff6675
+}
+
+*{
+  box-sizing:border-box
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  background:var(--bg);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+
+#app{
+  min-height:100%;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  flex-direction:column
+}
+
+header{
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 18px;
+  border-bottom:1px solid var(--line);
+  background:rgba(8,10,15,.94);
+  z-index:3
+}
+
+h1{
+  font-size:17px;
+  margin:0;
+  font-weight:700
+}
+
+.status{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  color:var(--muted);
+  font-size:12px
+}
+
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#596273
+}
+
+.dot.live{
+  background:var(--accent);
+  box-shadow:0 0 12px rgba(105,230,165,.6)
+}
+
+main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-height:0
+}
+
+.viewer{
+  position:relative;
+  flex:1;
+  min-height:360px;
+  background:#000;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center
+}
+
+video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transform:scaleX(1)
+}
+
+.placeholder{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:28px;
+  text-align:center;
+  background:radial-gradient(circle at 50% 40%,#171d28,#000 72%)
+}
+
+.placeholder.hidden{
+  display:none
+}
+
+.card{
+  max-width:390px
+}
+
+.cam-icon{
+  font-size:42px;
+  margin-bottom:12px
+}
+
+.card h2{
+  font-size:21px;
+  margin:0 0 8px
+}
+
+.card p{
+  color:var(--muted);
+  line-height:1.5;
+  margin:0 0 20px;
+  font-size:14px
+}
+
+button{
+  border:0;
+  border-radius:13px;
+  padding:13px 18px;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer
+}
+
+.primary{
+  background:var(--accent);
+  color:#07130d
+}
+
+.secondary{
+  background:#1a202b;
+  color:var(--text);
+  border:1px solid var(--line)
+}
+
+.controls{
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+  background:var(--panel);
+  border-top:1px solid var(--line);
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap
+}
+
+.controls button{
+  flex:1;
+  min-width:130px
+}
+
+.error{
+  color:#ff9aa4;
+  font-size:13px;
+  margin:8px 0 0
+}
+
+.note{
+  padding:10px 16px;
+  color:var(--muted);
+  font-size:11px;
+  text-align:center;
+  background:#0d1016
+}
+
+#room{
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #252c38;
+  background:#11151d;
+  color:#f4f7fb;
+  width:100%;
+  margin-bottom:8px;
+  font:inherit
+}
+
+@media (orientation:landscape){
+  header{
+    height:52px
+  }
+
+  .viewer{
+    min-height:240px
+  }
+
+  .controls{
+    padding:9px 12px
+  }
+
+  .note{
+    display:none
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+<header>
+  <h1>Monitor de habitación</h1>
+
+  <div class="status">
+    <span id="dot" class="dot"></span>
+    <span id="state">Cámara apagada</span>
+  </div>
+</header>
+
+<main>
+
+<section class="viewer">
+
+  <video id="video" autoplay playsinline muted></video>
+
+  <div id="placeholder" class="placeholder">
+
+    <div class="card">
+
+      <div class="cam-icon">◉</div>
+
+      <h2>Listo para monitorizar</h2>
+
+      <p>
+        Pulsa «Activar cámara». El navegador te pedirá permiso
+        y se intentará usar la cámara trasera del móvil.
+      </p>
+
+      <button id="start" class="primary">
+        Activar cámara
+      </button>
+
+      <div id="error" class="error"></div>
+
+    </div>
+
+  </div>
+
+</section>
+
+<div class="controls">
+
+  <button id="flip" class="secondary">
+    Cambiar cámara
+  </button>
+
+  <button id="fullscreen" class="secondary">
+    Pantalla completa
+  </button>
+
+  <button id="stop" class="secondary">
+    Apagar
+  </button>
+
+</div>
+
+<div class="controls">
+
+  <button id="cameraMode" class="primary">
+    Modo cámara
+  </button>
+
+  <button id="viewerMode" class="secondary">
+    Ver otra cámara
+  </button>
+
+</div>
+
+<div id="remotePanel" class="note" style="display:none">
+
+  <input
+    id="room"
+    placeholder="Código de habitación"
+    autocomplete="off"
+  >
+
+  <button
+    id="connect"
+    class="primary"
+    style="width:100%"
+  >
+    Conectar
+  </button>
+
+</div>
+
+<div class="note">
+  En modo cámara, comparte el código que aparece al conectarse.
+  En el otro móvil introduce ese código para ver el vídeo.
+</div>
+
+</main>
+
+</div>
+
+<script>
+
+let stream = null;
+let rear = true;
+let peer = null;
+let currentMode = "camera";
+
+const video = document.getElementById("video");
+const placeholder = document.getElementById("placeholder");
+const state = document.getElementById("state");
+const dot = document.getElementById("dot");
+const error = document.getElementById("error");
+const room = document.getElementById("room");
+const remotePanel = document.getElementById("remotePanel");
+
+
+/* =========================
+   CÁMARA
+========================= */
+
+async function startCamera(){
+
+  error.textContent = "";
+
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+
+    error.textContent =
+      "Este navegador no permite acceder a la cámara aquí. Usa HTTPS.";
+
+    return;
+  }
+
+  stopCamera(false);
+
+  try{
+
+    stream = await navigator.mediaDevices.getUserMedia({
+
+      video:{
+        facingMode: rear
+          ? { ideal:"environment" }
+          : { ideal:"user" },
+
+        width:{ ideal:1280 },
+        height:{ ideal:720 }
+      },
+
+      audio:false
+
+    });
+
+    video.srcObject = stream;
+
+    placeholder.classList.add("hidden");
+
+    dot.classList.add("live");
+
+    state.textContent = "Cámara activa";
+
+
+    /*
+      PeerJS crea el identificador de esta cámara.
+    */
+
+    peer = new Peer({
+
+      config:{
+        iceServers:[
+          {
+            urls:"stun:stun.l.google.com:19302"
+          }
+        ]
+      }
+
+    });
+
+
+    peer.on("open", function(id){
+
+      state.textContent = "Código: " + id;
+
+      room.value = id;
+
+    });
+
+
+    /*
+      Cuando el móvil visor llama,
+      respondemos enviando nuestra cámara.
+    */
+
+    peer.on("call", function(call){
+
+      if(currentMode === "camera" && stream){
+
+        call.answer(stream);
+
+      }
+
+    });
+
+
+    peer.on("error", function(e){
+
+      error.textContent =
+        "Error de conexión: " + e.message;
+
+    });
+
+
+  }catch(e){
+
+    state.textContent = "Cámara apagada";
+
+    dot.classList.remove("live");
+
+    if(e.name === "NotAllowedError"){
+
+      error.textContent =
+        "Permiso de cámara denegado. Actívalo en los ajustes del navegador.";
+
+    }else{
+
+      error.textContent =
+        "No se pudo iniciar la cámara: " + e.message;
+
+    }
+
+  }
+
+}
+
+
+/* =========================
+   APAGAR CÁMARA
+========================= */
+
+function stopCamera(show = true){
+
+  if(stream){
+
+    stream.getTracks().forEach(function(track){
+
+      track.stop();
+
+    });
+
+    stream = null;
+
+  }
+
+  if(peer){
+
+    peer.destroy();
+
+    peer = null;
+
+  }
+
+  video.srcObject = null;
+
+  dot.classList.remove("live");
+
+  state.textContent = "Cámara apagada";
+
+  if(show){
+
+    placeholder.classList.remove("hidden");
+
+  }
+
+}
+
+
+/* =========================
+   BOTÓN ACTIVAR
+========================= */
+
+document.getElementById("start").onclick = function(){
+
+  startCamera();
+
+};
+
+
+/* =========================
+   INICIO AUTOMÁTICO
+========================= */
+
+window.addEventListener("load", function(){
+
+  startCamera();
+
+});
+
+
+/* =========================
+   APAGAR
+========================= */
+
+document.getElementById("stop").onclick = function(){
+
+  stopCamera();
+
+};
+
+
+/* =========================
+   CAMBIAR CÁMARA
+========================= */
+
+document.getElementById("flip").onclick = function(){
+
+  rear = !rear;
+
+  if(stream){
+
+    startCamera();
+
+  }
+
+};
+
+
+/* =========================
+   PANTALLA COMPLETA
+========================= */
+
+document.getElementById("fullscreen").onclick =
+async function(){
+
+  try{
+
+    if(!document.fullscreenElement){
+
+      await document.documentElement.requestFullscreen();
+
+    }else{
+
+      await document.exitFullscreen();
+
+    }
+
+  }catch(e){}
+
+};
+
+
+/* =========================
+   MODO CÁMARA
+========================= */
+
+document.getElementById("cameraMode").onclick =
+function(){
+
+  currentMode = "camera";
+
+  remotePanel.style.display = "none";
+
+  if(!stream){
+
+    startCamera();
+
+  }
+
+};
+
+
+/* =========================
+   MODO VISOR
+========================= */
+
+document.getElementById("viewerMode").onclick =
+function(){
+
+  currentMode = "viewer";
+
+  stopCamera(false);
+
+  remotePanel.style.display = "block";
+
+  state.textContent = "Esperando conexión";
+
+  error.textContent = "";
+
+};
+
+
+/* =========================
+   CONECTAR CON OTRA CÁMARA
+========================= */
+
+document.getElementById("connect").onclick =
+function(){
+
+  const id = room.value.trim();
+
+  if(!id){
+
+    error.textContent =
+      "Escribe el código de la cámara.";
+
+    return;
+
+  }
+
+
+  error.textContent = "";
+
+  if(peer){
+
+    peer.destroy();
+
+  }
+
+
+  /*
+    Creamos el Peer del móvil visor.
+  */
+
+  peer = new Peer({
+
+    config:{
+      iceServers:[
+        {
+          urls:"stun:stun.l.google.com:19302"
+        }
+      ]
+    }
+
+  });
+
+
+  peer.on("open", function(){
+
+    state.textContent = "Conectando...";
+
+
+    /*
+      Llamamos al móvil cámara.
+      PeerJS permite una llamada sin stream
+      para este caso de recepción.
+    */
+
+    const call = peer.call(id, null);
+
+
+    call.on("stream", function(remoteStream){
+
+      video.srcObject = remoteStream;
+
+      placeholder.classList.add("hidden");
+
+      dot.classList.add("live");
+
+      state.textContent = "Viendo cámara";
+
+    });
+
+
+    call.on("close", function(){
+
+      dot.classList.remove("live");
+
+      state.textContent = "Conexión cerrada";
+
+      placeholder.classList.remove("hidden");
+
+    });
+
+
+    call.on("error", function(e){
+
+      dot.classList.remove("live");
+
+      state.textContent = "Error";
+
+      error.textContent =
+        "No se pudo conectar: " + e.message;
+
+    });
+
+  });
+
+
+  peer.on("error", function(e){
+
+    dot.classList.remove("live");
+
+    state.textContent = "Error";
+
+    error.textContent =
+      "Error de conexión: " + e.message;
+
+  });
+
+};
+
+</script>
+
+</body>
+</html>
