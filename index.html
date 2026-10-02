@@ -1,810 +1,1454 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<meta charset="utf-8">
+  <title>Cámara Vigilancia</title>
 
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
-<meta
-  name="theme-color"
-  content="#080a0f">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-<title>Monitor de habitación</title>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      background: #0b0f14;
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-<style>
+    .app {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-:root{
-  color-scheme:dark;
-  --bg:#080a0f;
-  --panel:#11151d;
-  --panel2:#0d1016;
-  --text:#f4f7fb;
-  --muted:#9ba5b4;
-  --line:#252c38;
-  --accent:#69e6a5;
-  --danger:#ff6675;
-  --warning:#ffd166;
-}
+    header {
+      padding: 16px;
+      text-align: center;
+      background: #111821;
+      border-bottom: 1px solid #26313d;
+    }
 
-*{
-  box-sizing:border-box;
-}
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
 
-html,
-body{
-  margin:0;
-  width:100%;
-  height:100%;
-  background:var(--bg);
-  color:var(--text);
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
+    header p {
+      margin: 6px 0 0;
+      color: #9ba8b5;
+      font-size: 13px;
+    }
 
-body{
-  min-height:100vh;
-}
+    .container {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
 
-#app{
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-}
+    .card {
+      background: #121922;
+      border: 1px solid #273340;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
 
-header{
-  height:58px;
-  flex:none;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 15px;
-  background:#080a0f;
-  border-bottom:1px solid var(--line);
-}
+    .mode-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
 
-h1{
-  margin:0;
-  font-size:17px;
-}
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #fff;
+      background: #1976d2;
+      transition: transform 0.1s ease, opacity 0.2s ease;
+    }
 
-.status{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  color:var(--muted);
-  font-size:12px;
-}
+    button:active {
+      transform: scale(0.98);
+    }
 
-.dot{
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:#596273;
-}
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
 
-.dot.live{
-  background:var(--accent);
-  box-shadow:0 0 12px rgba(105,230,165,.7);
-}
+    button.secondary {
+      background: #263442;
+    }
 
-.dot.wait{
-  background:var(--warning);
-}
+    button.danger {
+      background: #c62828;
+    }
 
-.dot.error{
-  background:var(--danger);
-}
+    button.success {
+      background: #2e7d32;
+    }
 
-main{
-  flex:1;
-  min-height:0;
-  display:flex;
-  flex-direction:column;
-}
+    .hidden {
+      display: none !important;
+    }
 
-.viewer{
-  position:relative;
-  flex:1;
-  min-height:280px;
-  background:#000;
-  overflow:hidden;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
 
-#video{
-  width:100%;
-  height:100%;
-  display:block;
-  background:#000;
-  object-fit:contain;
-}
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #aeb9c5;
+      font-size: 14px;
+    }
 
-.placeholder{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:25px;
-  text-align:center;
-  background:radial-gradient(
-    circle at 50% 40%,
-    #171d28,
-    #000 75%
-  );
-}
+    input {
+      width: 100%;
+      border: 1px solid #344250;
+      border-radius: 10px;
+      background: #0d131a;
+      color: #fff;
+      padding: 14px;
+      font-size: 20px;
+      text-align: center;
+      letter-spacing: 8px;
+      outline: none;
+    }
 
-.placeholder.hidden{
-  display:none;
-}
+    input:focus {
+      border-color: #1976d2;
+    }
 
-.card{
-  max-width:420px;
-}
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
 
-.icon{
-  font-size:44px;
-  margin-bottom:10px;
-}
+    .button-row.three {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
 
-.card h2{
-  margin:0 0 8px;
-  font-size:21px;
-}
+    .status {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: #0c1218;
+      color: #aeb9c5;
+      font-size: 14px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
 
-.card p{
-  margin:0;
-  color:var(--muted);
-  line-height:1.5;
-  font-size:14px;
-}
+    .status.ok {
+      color: #81c784;
+    }
 
-.pin{
-  margin:18px 0;
-  font-size:42px;
-  letter-spacing:10px;
-  font-weight:800;
-  color:var(--accent);
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-}
+    .status.error {
+      color: #ef9a9a;
+    }
 
-.controls{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  padding:10px 12px;
-  background:var(--panel);
-  border-top:1px solid var(--line);
-}
+    .status.warning {
+      color: #ffcc80;
+    }
 
-button{
-  flex:1;
-  min-width:110px;
-  border:0;
-  border-radius:11px;
-  padding:12px 14px;
-  font:inherit;
-  font-weight:700;
-  cursor:pointer;
-}
+    .pin-box {
+      text-align: center;
+      padding: 18px 10px;
+      background: #0c1218;
+      border-radius: 14px;
+      margin: 14px 0;
+    }
 
-button:active{
-  transform:scale(.98);
-}
+    .pin-label {
+      color: #9ba8b5;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
 
-.primary{
-  background:var(--accent);
-  color:#07130d;
-}
+    .pin {
+      font-size: 42px;
+      font-weight: bold;
+      letter-spacing: 12px;
+      padding-left: 12px;
+      color: #64b5f6;
+    }
 
-.secondary{
-  background:#1a202b;
-  color:var(--text);
-  border:1px solid var(--line);
-}
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-top: 12px;
+      aspect-ratio: 16 / 9;
+    }
 
-#remotePanel{
-  padding:14px 12px;
-  background:var(--panel2);
-  border-top:1px solid var(--line);
-}
+    video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      background: #000;
+    }
 
-#room{
-  display:block;
-  width:100%;
-  padding:14px;
-  margin-bottom:8px;
-  border:1px solid var(--line);
-  border-radius:11px;
-  outline:none;
-  background:#11151d;
-  color:var(--text);
-  font:inherit;
-  font-size:22px;
-  text-align:center;
-  letter-spacing:7px;
-  font-weight:700;
-}
+    .video-status {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.65);
+      font-size: 12px;
+      color: #fff;
+      pointer-events: none;
+    }
 
-#room:focus{
-  border-color:var(--accent);
-}
+    .stats {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #0c1218;
+      color: #8f9daa;
+      font-size: 12px;
+      line-height: 1.5;
+      font-family: monospace;
+    }
 
-.info{
-  padding:9px 12px;
-  background:var(--panel2);
-  color:var(--muted);
-  font-size:11px;
-  line-height:1.5;
-  text-align:center;
-}
+    .info {
+      color: #8f9daa;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 10px;
+    }
 
-#quality{
-  color:var(--accent);
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  margin-top:3px;
-}
+    .sound-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 9px;
+      border-radius: 8px;
+      background: #263442;
+      color: #dce6ef;
+      font-size: 12px;
+      margin-top: 8px;
+    }
 
-#error{
-  color:#ff9aa4;
-  margin-top:4px;
-}
+    .sound-indicator.active {
+      background: #2e7d32;
+    }
 
-.hidden{
-  display:none!important;
-}
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #66727e;
+      font-size: 12px;
+    }
 
-@media(max-width:600px){
+    @media (max-width: 600px) {
+      .container {
+        padding: 10px;
+      }
 
-  header{
-    height:56px;
-  }
+      .card {
+        padding: 13px;
+        border-radius: 13px;
+      }
 
-  .viewer{
-    min-height:260px;
-  }
+      header h1 {
+        font-size: 19px;
+      }
 
-  .pin{
-    font-size:36px;
-  }
+      .button-row.three {
+        grid-template-columns: 1fr;
+      }
 
-}
-
-@media(orientation:landscape){
-
-  header{
-    height:48px;
-  }
-
-  .viewer{
-    min-height:220px;
-  }
-
-}
-
-</style>
-
+      .pin {
+        font-size: 34px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<div id="app">
+<div class="app">
 
-<header>
+  <header>
+    <h1>📹 Cámara de Vigilancia</h1>
+    <p>Móvil 1 = cámara · Móvil 2 = visor</p>
+  </header>
 
-<h1>Monitor de habitación</h1>
+  <main class="container">
 
-<div class="status">
+    <!-- SELECCIÓN DE MODO -->
+    <div class="card">
 
-<span
-  id="dot"
-  class="dot">
-</span>
+      <div class="mode-buttons">
+        <button id="cameraModeButton" class="success">
+          📷 Modo cámara
+        </button>
 
-<span id="state">
-  Listo
-</span>
+        <button id="viewerModeButton" class="secondary">
+          👀 Modo visor
+        </button>
+      </div>
 
-</div>
-
-</header>
-
-<main>
-
-<section class="viewer">
-
-<video
-  id="video"
-  autoplay
-  playsinline
-  muted
-  preload="auto">
-</video>
-
-<div
-  id="placeholder"
-  class="placeholder">
-
-<div class="card">
-
-<div class="icon">
-  📷
-</div>
-
-<h2 id="placeholderTitle">
-  Monitor de habitación
-</h2>
-
-<p id="placeholderText">
-  Selecciona el modo que quieres utilizar.
-</p>
-
-<div
-  id="pinDisplay"
-  class="pin hidden">
-</div>
-
-</div>
-
-</div>
-
-</section>
+    </div>
 
 
-<!-- MODOS -->
+    <!-- MODO CÁMARA -->
+    <section id="cameraPanel" class="card hidden">
 
-<div class="controls">
+      <h2 class="section-title">📷 Móvil cámara</h2>
 
-<button
-  id="cameraMode"
-  class="primary">
+      <div class="info">
+        Este móvil transmitirá la imagen y el sonido de la habitación.
+        Mantén esta página abierta y evita bloquear la pantalla.
+      </div>
 
-  📷 Modo cámara
+      <div class="pin-box">
 
-</button>
+        <div class="pin-label">
+          Código para conectar desde el otro móvil
+        </div>
 
-<button
-  id="viewerMode"
-  class="secondary">
+        <div id="cameraPin" class="pin">
+          ----
+        </div>
 
-  👁 Modo visor
+      </div>
 
-</button>
+      <div class="button-row">
+        <button id="startCameraButton" class="success">
+          ▶️ Iniciar cámara
+        </button>
 
-</div>
+        <button id="stopCameraButton" class="danger" disabled>
+          ⏹️ Detener
+        </button>
+      </div>
 
+      <div class="button-row">
+        <button id="switchCameraButton" class="secondary" disabled>
+          🔄 Cambiar cámara
+        </button>
 
-<!-- CONTROLES CÁMARA -->
+        <button id="fullscreenCameraButton" class="secondary" disabled>
+          ⛶ Pantalla completa
+        </button>
+      </div>
 
-<div
-  id="cameraControls"
-  class="controls hidden">
+      <div id="cameraSoundIndicator" class="sound-indicator">
+        🎙️ Micrófono apagado
+      </div>
 
-<button
-  id="start"
-  class="primary">
+      <div class="video-wrapper">
+        <video
+          id="cameraVideo"
+          autoplay
+          muted
+          playsinline
+        ></video>
 
-  Activar cámara
+        <div id="cameraVideoStatus" class="video-status">
+          Cámara detenida
+        </div>
+      </div>
 
-</button>
+      <div id="cameraStatus" class="status">
+        Pulsa "Iniciar cámara".
+      </div>
 
-<button
-  id="flip"
-  class="secondary">
-
-  Cambiar cámara
-
-</button>
-
-<button
-  id="stop"
-  class="secondary">
-
-  Apagar
-
-</button>
-
-</div>
-
-
-<!-- VISOR -->
-
-<div
-  id="remotePanel"
-  class="hidden">
-
-<input
-  id="room"
-  type="tel"
-  inputmode="numeric"
-  maxlength="4"
-  pattern="[0-9]{4}"
-  placeholder="0000"
-  autocomplete="off">
-
-<button
-  id="connect"
-  class="primary">
-
-  Conectar
-
-</button>
-
-</div>
+    </section>
 
 
-<div class="info">
+    <!-- MODO VISOR -->
+    <section id="viewerPanel" class="card hidden">
 
-<div id="mainInfo">
-  Selecciona un modo para comenzar.
-</div>
+      <h2 class="section-title">👀 Móvil visor</h2>
 
-<div id="quality"></div>
+      <label for="pinInput">
+        Introduce el código de 4 dígitos del móvil cámara
+      </label>
 
-<div id="error"></div>
+      <input
+        id="pinInput"
+        type="tel"
+        inputmode="numeric"
+        pattern="[0-9]{4}"
+        maxlength="4"
+        autocomplete="off"
+        placeholder="0000"
+      >
 
-</div>
+      <div class="button-row">
+        <button id="connectButton" class="success">
+          🔗 Conectar
+        </button>
 
-</main>
+        <button id="disconnectButton" class="danger" disabled>
+          ⏹️ Desconectar
+        </button>
+      </div>
+
+      <!-- BOTÓN DE SONIDO -->
+      <button
+        id="soundButton"
+        class="secondary hidden"
+        style="width:100%; margin-top:10px;"
+      >
+        🔇 Activar sonido
+      </button>
+
+      <div id="viewerSoundIndicator" class="sound-indicator">
+        🔇 Sonido desactivado
+      </div>
+
+      <div class="video-wrapper">
+        <video
+          id="viewerVideo"
+          autoplay
+          muted
+          playsinline
+        ></video>
+
+        <div id="viewerVideoStatus" class="video-status">
+          Sin conexión
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button id="fullscreenViewerButton" class="secondary" disabled>
+          ⛶ Pantalla completa
+        </button>
+      </div>
+
+      <div id="viewerStats" class="stats hidden">
+        Esperando estadísticas...
+      </div>
+
+      <div id="viewerStatus" class="status">
+        Introduce el código de la cámara.
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <footer>
+    WebRTC + PeerJS
+  </footer>
 
 </div>
 
 
 <script>
 
-"use strict";
+  /*
+   * ============================================================
+   * CONFIGURACIÓN
+   * ============================================================
+   */
 
+  const CAMERA_WIDTH = 1280;
+  const CAMERA_HEIGHT = 720;
+  const CAMERA_FPS = 30;
 
-/* =========================================================
-   CONFIGURACIÓN DE VÍDEO
-========================================================= */
+  // Bitrate máximo aproximado.
+  // 2.5 Mbps busca un equilibrio entre calidad y latencia.
+  const MAX_BITRATE = 2500000;
 
-const CAMERA_WIDTH = 1280;
-const CAMERA_HEIGHT = 720;
-const CAMERA_FPS = 30;
-
-/*
-  2,5 Mbps máximo.
-  Pensado para mantener buena fluidez.
-*/
-
-const MAX_BITRATE = 2500000;
-
-
-/* =========================================================
-   ELEMENTOS
-========================================================= */
-
-const video =
-  document.getElementById("video");
-
-const placeholder =
-  document.getElementById("placeholder");
-
-const placeholderTitle =
-  document.getElementById("placeholderTitle");
-
-const placeholderText =
-  document.getElementById("placeholderText");
-
-const pinDisplay =
-  document.getElementById("pinDisplay");
-
-const state =
-  document.getElementById("state");
-
-const dot =
-  document.getElementById("dot");
-
-const mainInfo =
-  document.getElementById("mainInfo");
-
-const quality =
-  document.getElementById("quality");
-
-const errorBox =
-  document.getElementById("error");
-
-const remotePanel =
-  document.getElementById("remotePanel");
-
-const cameraControls =
-  document.getElementById("cameraControls");
-
-const room =
-  document.getElementById("room");
-
-
-/* =========================================================
-   VARIABLES
-========================================================= */
-
-let peer = null;
-
-let stream = null;
-
-let activeCall = null;
-
-let mode = null;
-
-let rearCamera = true;
-
-let cameraPin = null;
-
-let statsTimer = null;
-
-let lastBytesReceived = 0;
-
-let lastStatsTime = 0;
-
-
-/* =========================================================
-   ESTADO
-========================================================= */
-
-function setState(text,type="normal"){
-
-  state.textContent = text;
-
-  dot.className = "dot";
-
-  if(type === "live"){
-    dot.classList.add("live");
-  }
-
-  if(type === "wait"){
-    dot.classList.add("wait");
-  }
-
-  if(type === "error"){
-    dot.classList.add("error");
-  }
-
-}
-
-
-/* =========================================================
-   PLACEHOLDER
-========================================================= */
-
-function showPlaceholder(title,text){
-
-  placeholderTitle.textContent = title;
-
-  placeholderText.textContent = text;
-
-  placeholder.classList.remove(
-    "hidden"
-  );
-
-}
-
-
-function hidePlaceholder(){
-
-  placeholder.classList.add(
-    "hidden"
-  );
-
-}
-
-
-/* =========================================================
-   ERRORES
-========================================================= */
-
-function errorText(error){
-
-  if(!error){
-    return "Error desconocido";
-  }
-
-  if(typeof error === "string"){
-    return error;
-  }
-
-  return (
-    error.name
-      ? error.name + ": "
-      : ""
-  ) +
-  (
-    error.message ||
-    error.type ||
-    "Error desconocido"
-  );
-
-}
-
-
-/* =========================================================
-   GENERAR PIN DE EXACTAMENTE 4 CIFRAS
-========================================================= */
-
-function generatePin(){
 
   /*
-    1000 - 9999
+   * ============================================================
+   * ELEMENTOS
+   * ============================================================
+   */
 
-    Siempre serán exactamente
-    cuatro números.
-  */
+  const cameraModeButton = document.getElementById("cameraModeButton");
+  const viewerModeButton = document.getElementById("viewerModeButton");
 
-  return String(
-    Math.floor(
-      1000 +
-      Math.random() * 9000
-    )
-  );
+  const cameraPanel = document.getElementById("cameraPanel");
+  const viewerPanel = document.getElementById("viewerPanel");
 
-}
+  const cameraPin = document.getElementById("cameraPin");
+
+  const startCameraButton =
+    document.getElementById("startCameraButton");
+
+  const stopCameraButton =
+    document.getElementById("stopCameraButton");
+
+  const switchCameraButton =
+    document.getElementById("switchCameraButton");
+
+  const fullscreenCameraButton =
+    document.getElementById("fullscreenCameraButton");
+
+  const cameraVideo =
+    document.getElementById("cameraVideo");
+
+  const cameraVideoStatus =
+    document.getElementById("cameraVideoStatus");
+
+  const cameraStatus =
+    document.getElementById("cameraStatus");
+
+  const cameraSoundIndicator =
+    document.getElementById("cameraSoundIndicator");
 
 
-/* =========================================================
-   CREAR PEER DE CÁMARA
-========================================================= */
+  const pinInput =
+    document.getElementById("pinInput");
 
-function createCameraPeer(){
+  const connectButton =
+    document.getElementById("connectButton");
 
-  return new Promise(function(resolve,reject){
+  const disconnectButton =
+    document.getElementById("disconnectButton");
 
-    function tryCreate(attempt){
+  const soundButton =
+    document.getElementById("soundButton");
 
-      /*
-        Evitamos intentos infinitos.
-      */
+  const fullscreenViewerButton =
+    document.getElementById("fullscreenViewerButton");
 
-      if(attempt > 20){
+  const viewerVideo =
+    document.getElementById("viewerVideo");
 
-        reject(
-          new Error(
-            "No se pudo obtener un código de 4 cifras."
-          )
-        );
+  const viewerVideoStatus =
+    document.getElementById("viewerVideoStatus");
 
+  const viewerStatus =
+    document.getElementById("viewerStatus");
+
+  const viewerStats =
+    document.getElementById("viewerStats");
+
+  const viewerSoundIndicator =
+    document.getElementById("viewerSoundIndicator");
+
+
+  /*
+   * ============================================================
+   * ESTADO
+   * ============================================================
+   */
+
+  let mode = null;
+
+  let cameraPeer = null;
+  let viewerPeer = null;
+
+  let cameraStream = null;
+
+  let activeCall = null;
+
+  let currentFacingMode = "environment";
+
+  let soundEnabled = false;
+
+  let statsTimer = null;
+
+
+  /*
+   * ============================================================
+   * UTILIDADES
+   * ============================================================
+   */
+
+  function setStatus(element, text, type = "") {
+
+    element.textContent = text;
+
+    element.className = "status";
+
+    if (type) {
+      element.classList.add(type);
+    }
+  }
+
+
+  function generatePin() {
+
+    return String(
+      Math.floor(
+        1000 + Math.random() * 9000
+      )
+    );
+
+  }
+
+
+  function isValidPin(pin) {
+
+    return /^[0-9]{4}$/.test(pin);
+
+  }
+
+
+  /*
+   * ============================================================
+   * CAMBIO DE MODO
+   * ============================================================
+   */
+
+  cameraModeButton.addEventListener("click", function () {
+
+    mode = "camera";
+
+    cameraPanel.classList.remove("hidden");
+    viewerPanel.classList.add("hidden");
+
+    cameraModeButton.classList.remove("secondary");
+    cameraModeButton.classList.add("success");
+
+    viewerModeButton.classList.remove("success");
+    viewerModeButton.classList.add("secondary");
+
+  });
+
+
+  viewerModeButton.addEventListener("click", function () {
+
+    mode = "viewer";
+
+    viewerPanel.classList.remove("hidden");
+    cameraPanel.classList.add("hidden");
+
+    viewerModeButton.classList.remove("secondary");
+    viewerModeButton.classList.add("success");
+
+    cameraModeButton.classList.remove("success");
+    cameraModeButton.classList.add("secondary");
+
+    updateSoundButton();
+
+  });
+
+
+  /*
+   * ============================================================
+   * OPTIMIZAR VIDEO
+   * ============================================================
+   */
+
+  async function optimizeSender(sender) {
+
+    try {
+
+      const parameters = sender.getParameters();
+
+      if (!parameters.encodings) {
         return;
       }
 
+      parameters.encodings.forEach(function (encoding) {
 
-      /*
-        Generar código.
-      */
+        encoding.maxBitrate = MAX_BITRATE;
+        encoding.maxFramerate = CAMERA_FPS;
 
-      const pin =
-        generatePin();
+      });
 
+      await sender.setParameters(parameters);
 
-      /*
-        Comprobación adicional.
-      */
+    } catch (error) {
 
-      if(!/^[0-9]{4}$/.test(pin)){
-
-        setTimeout(
-          function(){
-
-            tryCreate(
-              attempt + 1
-            );
-
-          },
-          100
-        );
-
-        return;
-      }
-
-
-      log(
-        "Solicitando código de 4 cifras: " +
-        pin
+      console.warn(
+        "No se pudo ajustar el bitrate:",
+        error
       );
 
+    }
 
-      /*
-        IMPORTANTE:
-
-        Aquí PeerJS recibe directamente
-        el código de 4 cifras.
-
-        No se utiliza new Peer()
-        sin ID para la cámara.
-      */
-
-      const newPeer =
-        new Peer(
-          pin,
-          {
-            debug:1,
-
-            config:{
-              iceServers:[
-                {
-                  urls:
-                    "stun:stun.l.google.com:19302"
-                },
-                {
-                  urls:
-                    "stun:stun1.l.google.com:19302"
-                }
-              ]
-            }
-          }
-        );
+  }
 
 
-      let finished = false;
+  /*
+   * ============================================================
+   * GENERAR PEER DE CÁMARA
+   * ============================================================
+   */
 
+  function createCameraPeer() {
 
-      /* -----------------------------------------
-         PEER ABIERTO
-      ----------------------------------------- */
+    return new Promise(function (resolve, reject) {
 
-      newPeer.on(
-        "open",
-        function(id){
+      let attempts = 0;
 
-          if(finished){
-            return;
-          }
+      function tryCreate() {
 
+        attempts++;
 
-          /*
-            Comprobación final.
+        const pin = generatePin();
 
-            Nunca aceptamos ni mostramos
-            un ID que no tenga 4 cifras.
-          */
+        cameraPin.textContent = pin;
 
-          if(!/^[0-9]{4}$/.test(id)){
+        const peer = new Peer(pin, {
 
-            try{
-              newPeer.destroy();
-            }catch(e){}
+          debug: 1
 
-            finished = true;
+        });
 
-            reject(
-              new Error(
-                "PeerJS no ha creado un código válido de 4 cifras."
-              )
-            );
+        cameraPeer = peer;
 
-            return;
-          }
+        peer.once("open", function (id) {
 
-
-          finished = true;
-
-
-          /*
-            Guardar Peer.
-          */
-
-          peer =
-            newPeer;
-
-
-          /*
-            Guardar PIN confirmado.
-          */
-
-          cameraPin =
-            id;
-
-
-          log(
-            "Código creado correctamente: " +
+          console.log(
+            "Peer cámara abierto:",
             id
           );
 
+          cameraPin.textContent = id;
+
+          resolve(id);
+
+        });
+
+
+        peer.once("error", function (error) {
+
+          console.error(
+            "Error Peer cámara:",
+            error
+          );
+
+          /*
+           * Si el código ya está ocupado,
+           * generamos otro código de 4 dígitos.
+           */
+
+          if (
+            error.type === "unavailable-id" &&
+            attempts < 10
+          ) {
+
+            try {
+
+              peer.destroy();
+
+            } catch (e) {}
+
+            setTimeout(
+              tryCreate,
+              300
+            );
+
+            return;
+
+          }
+
+          reject(error);
+
+        });
+
+      }
+
+      tryCreate();
+
+    });
+
+  }
+
+
+  /*
+   * ============================================================
+   * INICIAR CÁMARA
+   * ============================================================
+   */
+
+  async function startCamera() {
+
+    if (cameraStream) {
+      return;
+    }
+
+    try {
+
+      setStatus(
+        cameraStatus,
+        "Solicitando cámara y micrófono...",
+        "warning"
+      );
+
+      startCameraButton.disabled = true;
+
+      /*
+       * CÁMARA + MICRÓFONO
+       *
+       * El audio procede del micrófono del móvil
+       * que está situado en la habitación.
+       */
+
+      cameraStream =
+        await navigator.mediaDevices.getUserMedia({
+
+          video: {
+
+            width: {
+              ideal: CAMERA_WIDTH
+            },
+
+            height: {
+              ideal: CAMERA_HEIGHT
+            },
+
+            frameRate: {
+              ideal: CAMERA_FPS,
+              max: CAMERA_FPS
+            },
+
+            facingMode: {
+              ideal: currentFacingMode
+            }
+
+          },
+
+          audio: {
+
+            echoCancellation: true,
+
+            noiseSuppression: true,
+
+            autoGainControl: true
+
+          }
+
+        });
+
+
+      /*
+       * Vista local
+       */
+
+      cameraVideo.srcObject = cameraStream;
+
+      cameraVideo.muted = true;
+      cameraVideo.playsInline = true;
+
+      await cameraVideo.play();
+
+
+      /*
+       * Indicador de micrófono
+       */
+
+      const audioTracks =
+        cameraStream.getAudioTracks();
+
+      if (audioTracks.length > 0) {
+
+        cameraSoundIndicator.textContent =
+          "🎙️ Micrófono activo";
+
+        cameraSoundIndicator.classList.add(
+          "active"
+        );
+
+      }
+
+
+      /*
+       * Indicador de cámara
+       */
+
+      cameraVideoStatus.textContent =
+        "🔴 Transmitiendo";
+
+
+      /*
+       * Crear Peer con código de 4 dígitos
+       */
+
+      setStatus(
+        cameraStatus,
+        "Creando código de conexión...",
+        "warning"
+      );
+
+
+      const pin =
+        await createCameraPeer();
+
+
+      /*
+       * Escuchar llamadas entrantes
+       */
+
+      cameraPeer.on(
+        "call",
+        function (incomingCall) {
+
+          console.log(
+            "Llamada entrante:",
+            incomingCall.peer
+          );
+
+
+          /*
+           * Respondemos con cámara + micrófono.
+           */
+
+          incomingCall.answer(
+            cameraStream
+          );
+
+
+          activeCall = incomingCall;
+
+
+          /*
+           * Optimizar vídeo enviado
+           */
+
+          incomingCall.on(
+            "stream",
+            function () {
+
+              console.log(
+                "El visor recibió nuestro stream"
+              );
+
+            }
+          );
+
+
+          incomingCall.on(
+            "close",
+            function () {
+
+              if (
+                activeCall === incomingCall
+              ) {
+
+                activeCall = null;
+
+              }
+
+            }
+          );
+
+
+          incomingCall.on(
+            "error",
+            function (error) {
+
+              console.error(
+                "Error en llamada:",
+                error
+              );
+
+            }
+          );
+
+
+          /*
+           * PeerJS crea RTCPeerConnection
+           * internamente. Esperamos un poco y
+           * buscamos los sender.
+           */
+
+          setTimeout(
+            function () {
+
+              try {
+
+                if (
+                  incomingCall.peerConnection
+                ) {
+
+                  const senders =
+                    incomingCall
+                      .peerConnection
+                      .getSenders();
+
+                  senders.forEach(
+                    function (sender) {
+
+                      if (
+                        sender.track &&
+                        sender.track.kind === "video"
+                      ) {
+
+                        optimizeSender(
+                          sender
+                        );
+
+                        /*
+                         * Pedimos al navegador
+                         * priorizar detalle/movimiento.
+                         */
+
+                        try {
+
+                          sender.track.contentHint =
+                            "motion";
+
+                        } catch (e) {}
+
+                      }
+
+                    }
+                  );
+
+                }
+
+              } catch (error) {
+
+                console.warn(
+                  "No se pudieron optimizar los senders:",
+                  error
+                );
+
+              }
+
+            },
+            1000
+          );
+
+
+          setStatus(
+            cameraStatus,
+            "🟢 Móvil visor conectado. Cámara y micrófono transmitiendo.",
+            "ok"
+          );
+
+        }
+      );
+
+
+      cameraPeer.on(
+        "disconnected",
+        function () {
+
+          setStatus(
+            cameraStatus,
+            "Peer desconectado. Intentando reconectar...",
+            "warning"
+          );
+
+          try {
+            cameraPeer.reconnect();
+          } catch (e) {}
+
+        }
+      );
+
+
+      cameraPeer.on(
+        "close",
+        function () {
+
+          console.log(
+            "Peer cámara cerrado"
+          );
+
+        }
+      );
+
+
+      setStatus(
+        cameraStatus,
+        "🟢 Cámara activa. Código: " +
+        pin +
+        ". Esperando conexión del visor...",
+        "ok"
+      );
+
+
+      stopCameraButton.disabled = false;
+
+      switchCameraButton.disabled = false;
+
+      fullscreenCameraButton.disabled = false;
+
+
+    } catch (error) {
+
+      console.error(
+        "Error iniciando cámara:",
+        error
+      );
+
+
+      startCameraButton.disabled = false;
+
+
+      let message =
+        "No se pudo iniciar la cámara.";
+
+
+      if (
+        error.name ===
+        "NotAllowedError"
+      ) {
+
+        message =
+          "Permiso de cámara o micrófono denegado. Permite ambos permisos en el navegador.";
+
+      } else if (
+        error.name ===
+        "NotFoundError"
+      ) {
+
+        message =
+          "No se encontró una cámara o micrófono.";
+
+      } else if (
+        error.name ===
+        "NotReadableError"
+      ) {
+
+        message =
+          "La cámara o el micrófono están siendo utilizados por otra aplicación.";
+
+      }
+
+
+      setStatus(
+        cameraStatus,
+        message,
+        "error"
+      );
+
+    }
+
+  }
+
+
+  /*
+   * ============================================================
+   * DETENER CÁMARA
+   * ============================================================
+   */
+
+  function stopCamera() {
+
+    /*
+     * Detener cámara + micrófono
+     */
+
+    if (cameraStream) {
+
+      cameraStream
+        .getTracks()
+        .forEach(function (track) {
+
+          track.stop();
+
+        });
+
+      cameraStream = null;
+
+    }
+
+
+    cameraVideo.srcObject = null;
+
+
+    /*
+     * Cerrar llamada
+     */
+
+    if (activeCall) {
+
+      try {
+        activeCall.close();
+      } catch (e) {}
+
+      activeCall = null;
+
+    }
+
+
+    /*
+     * Cerrar Peer
+     */
+
+    if (cameraPeer) {
+
+      try {
+        cameraPeer.destroy();
+      } catch (e) {}
+
+      cameraPeer = null;
+
+    }
+
+
+    cameraPin.textContent = "----";
+
+
+    cameraSoundIndicator.textContent =
+      "🎙️ Micrófono apagado";
+
+    cameraSoundIndicator.classList.remove(
+      "active"
+    );
+
+
+    cameraVideoStatus.textContent =
+      "Cámara detenida";
+
+
+    startCameraButton.disabled = false;
+
+    stopCameraButton.disabled = true;
+
+    switchCameraButton.disabled = true;
+
+    fullscreenCameraButton.disabled = true;
+
+
+    setStatus(
+      cameraStatus,
+      "Cámara detenida."
+    );
+
+  }
+
+
+  /*
+   * ============================================================
+   * CAMBIAR CÁMARA
+   * ============================================================
+   */
+
+  async function switchCamera() {
+
+    if (!cameraStream) {
+      return;
+    }
+
+
+    try {
+
+      const oldStream =
+        cameraStream;
+
+
+      currentFacingMode =
+        currentFacingMode === "environment"
+          ? "user"
+          : "environment";
+
+
+      /*
+       * Pedimos la nueva cámara.
+       *
+       * Mantenemos el micrófono.
+       */
+
+      const newStream =
+        await navigator.mediaDevices.getUserMedia({
+
+          video: {
+
+            width: {
+              ideal: CAMERA_WIDTH
+            },
+
+            height: {
+              ideal: CAMERA_HEIGHT
+            },
+
+            frameRate: {
+              ideal: CAMERA_FPS,
+              max: CAMERA_FPS
+            },
+
+            facingMode: {
+              ideal: currentFacingMode
+            }
+
+          },
+
+          audio: {
+
+            echoCancellation: true,
+
+            noiseSuppression: true,
+
+            autoGainControl: true
+
+          }
+
+        });
+
+
+      cameraStream = newStream;
+
+      cameraVideo.srcObject =
+        cameraStream;
+
+
+      await cameraVideo.play();
+
+
+      /*
+       * Si ya existe una llamada,
+       * reemplazamos sus tracks.
+       */
+
+      if (
+        activeCall &&
+        activeCall.peerConnection
+      ) {
+
+        const senders =
+          activeCall
+            .peerConnection
+            .getSenders();
+
+
+        const newVideoTrack =
+          newStream.getVideoTracks()[0];
+
+        const newAudioTrack =
+          newStream.getAudioTracks()[0];
+
+
+        for (
+          const sender of senders
+        ) {
+
+          if (
+            sender.track &&
+            sender.track.kind === "video" &&
+            newVideoTrack
+          ) {
+
+            await sender.replaceTrack(
+              newVideoTrack
+            );
+
+            optimizeSender(sender);
+
+
+            try {
+
+              newVideoTrack.contentHint =
+                "motion";
+
+            } catch (e) {}
+
+          }
+
+
+          if (
+            sender.track &&
+            sender.track.kind === "audio" &&
+            newAudioTrack
+          ) {
+
+            await sender.replaceTrack(
+              newAudioTrack
+            );
+
+          }
+
+        }
+
+      }
+
+
+      /*
+       * Detenemos las pistas antiguas.
+       */
+
+      oldStream
+        .getTracks()
+        .forEach(function (track) {
+
+          track.stop();
+
+        });
+
+
+      setStatus(
+        cameraStatus,
+        "🔄 Cámara cambiada correctamente.",
+        "ok"
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Error cambiando cámara:",
+        error
+      );
+
+
+      setStatus(
+        cameraStatus,
+        "No se pudo cambiar la cámara.",
+        "error"
+      );
+
+    }
+
+  }
+
+
+  /*
+   * ============================================================
+   * CREAR PEER DEL VISOR
+   * ============================================================
+   */
+
+  function createViewerPeer() {
+
+    return new Promise(function (
+      resolve,
+      reject
+    ) {
+
+      const peer =
+        new Peer(undefined, {
+
+          debug: 1
+
+        });
+
+
+      viewerPeer = peer;
+
+
+      peer.once(
+        "open",
+        function (id) {
+
+          console.log(
+            "Peer visor:",
+            id
+          );
 
           resolve(id);
 
@@ -812,718 +1456,52 @@ function createCameraPeer(){
       );
 
 
-      /* -----------------------------------------
-         ERROR
-      ----------------------------------------- */
-
-      newPeer.on(
+      peer.once(
         "error",
-        function(error){
+        function (error) {
 
-          /*
-            Si el PIN ya está ocupado,
-            crear otro automáticamente.
-          */
-
-          if(
-            error &&
-            error.type === "unavailable-id"
-          ){
-
-            log(
-              "El código " +
-              pin +
-              " ya está ocupado. Generando otro..."
-            );
-
-
-            try{
-              newPeer.destroy();
-            }catch(e){}
-
-
-            if(!finished){
-
-              finished = true;
-
-
-              setTimeout(
-                function(){
-
-                  tryCreate(
-                    attempt + 1
-                  );
-
-                },
-                200
-              );
-
-            }
-
-            return;
-          }
-
-
-          /*
-            Otros errores.
-          */
-
-          if(!finished){
-
-            finished = true;
-
-
-            try{
-              newPeer.destroy();
-            }catch(e){}
-
-
-            reject(error);
-
-          }
-
-        }
-      );
-
-    }
-
-
-    /*
-      Primer intento.
-    */
-
-    tryCreate(1);
-
-  });
-
-}
-
-
-/* =========================================================
-   CREAR PEER DEL VISOR
-========================================================= */
-
-function createViewerPeer(){
-
-  return new Promise(
-    function(resolve,reject){
-
-      /*
-        El visor puede tener un ID interno
-        generado automáticamente.
-
-        El usuario NO lo verá.
-
-        El código que introduce el usuario
-        sigue siendo de 4 cifras.
-      */
-
-      const newPeer =
-        new Peer(
-          undefined,
-          {
-            debug:1,
-
-            config:{
-              iceServers:[
-                {
-                  urls:
-                    "stun:stun.l.google.com:19302"
-                },
-                {
-                  urls:
-                    "stun:stun1.l.google.com:19302"
-                }
-              ]
-            }
-          }
-        );
-
-
-      newPeer.on(
-        "open",
-        function(){
-
-          peer =
-            newPeer;
-
-          resolve(newPeer);
-
-        }
-      );
-
-
-      newPeer.on(
-        "error",
-        function(error){
+          console.error(
+            "Error Peer visor:",
+            error
+          );
 
           reject(error);
 
         }
       );
 
-    }
-  );
-
-}
-
-
-/* =========================================================
-   LOG
-========================================================= */
-
-function log(message){
-
-  console.log(
-    "[" +
-    new Date().toLocaleTimeString() +
-    "] " +
-    message
-  );
-
-}
-
-
-/* =========================================================
-   OPTIMIZAR WEBRTC
-========================================================= */
-
-async function optimizeSender(){
-
-  if(!activeCall){
-    return;
-  }
-
-
-  const pc =
-    activeCall.peerConnection;
-
-
-  if(!pc){
-    return;
-  }
-
-
-  const senders =
-    pc.getSenders();
-
-
-  for(
-    const sender of senders
-  ){
-
-    if(
-      !sender.track ||
-      sender.track.kind !== "video"
-    ){
-
-      continue;
-
-    }
-
-
-    try{
-
-      const params =
-        sender.getParameters();
-
-
-      if(
-        !params.encodings ||
-        !params.encodings.length
-      ){
-
-        params.encodings = [{}];
-
-      }
-
-
-      const encoding =
-        params.encodings[0];
-
-
-      /*
-        Máximo 2,5 Mbps.
-      */
-
-      encoding.maxBitrate =
-        MAX_BITRATE;
-
-
-      encoding.maxFramerate =
-        CAMERA_FPS;
-
-
-      /*
-        No reducir artificialmente
-        la resolución.
-      */
-
-      encoding.scaleResolutionDownBy =
-        1;
-
-
-      if(
-        "priority" in encoding
-      ){
-
-        encoding.priority =
-          "high";
-
-      }
-
-
-      if(
-        "degradationPreference" in params
-      ){
-
-        params.degradationPreference =
-          "maintain-resolution";
-
-      }
-
-
-      await sender.setParameters(
-        params
-      );
-
-
-      log(
-        "WebRTC optimizado: 720p / 30 FPS / 2,5 Mbps."
-      );
-
-
-    }catch(error){
-
-      log(
-        "No se pudieron aplicar todos los parámetros: " +
-        errorText(error)
-      );
-
-    }
+    });
 
   }
-
-}
-
-
-/* =========================================================
-   INICIAR CÁMARA
-========================================================= */
-
-async function startCamera(){
-
-  mode = "camera";
-
-  errorBox.textContent = "";
-
-  quality.textContent = "";
-
-
-  stopConnection();
-
-
-  showPlaceholder(
-    "Activando cámara...",
-    "Configurando vídeo de baja latencia."
-  );
-
-
-  setState(
-    "Activando cámara",
-    "wait"
-  );
-
-
-  try{
-
-    /*
-      Solicitar cámara.
-    */
-
-    stream =
-      await navigator.mediaDevices.getUserMedia({
-
-        video:{
-
-          width:{
-            ideal:
-              CAMERA_WIDTH
-          },
-
-          height:{
-            ideal:
-              CAMERA_HEIGHT
-          },
-
-          frameRate:{
-            ideal:
-              CAMERA_FPS,
-
-            max:
-              CAMERA_FPS
-          },
-
-          facingMode:
-            rearCamera
-              ? {
-                  ideal:"environment"
-                }
-              : {
-                  ideal:"user"
-                }
-
-        },
-
-        audio:false
-
-      });
-
-
-    /*
-      Configurar track.
-    */
-
-    const track =
-      stream.getVideoTracks()[0];
-
-
-    if(track){
-
-      try{
-
-        track.contentHint =
-          "motion";
-
-      }catch(e){}
-
-
-      const settings =
-        track.getSettings();
-
-
-      quality.textContent =
-        "Cámara: " +
-        (settings.width || "?") +
-        "×" +
-        (settings.height || "?") +
-        " · " +
-        Math.round(
-          settings.frameRate || 0
-        ) +
-        " FPS";
-
-    }
-
-
-    /*
-      Mostrar cámara local.
-    */
-
-    video.srcObject =
-      stream;
-
-
-    video.muted =
-      true;
-
-
-    await video.play().catch(
-      function(){}
-    );
-
-
-    /*
-      Crear código REAL de 4 cifras.
-    */
-
-    const pin =
-      await createCameraPeer();
-
-
-    /*
-      Comprobación final.
-    */
-
-    if(
-      !/^[0-9]{4}$/.test(pin)
-    ){
-
-      throw new Error(
-        "El código generado no tiene 4 cifras."
-      );
-
-    }
-
-
-    /*
-      Mostrar PIN.
-    */
-
-    pinDisplay.textContent =
-      pin;
-
-
-    pinDisplay.classList.remove(
-      "hidden"
-    );
-
-
-    placeholderTitle.textContent =
-      "Código de conexión";
-
-
-    placeholderText.textContent =
-      "Introduce este código de 4 cifras en el otro móvil.";
-
-
-    /*
-      Mantener vídeo local visible.
-    */
-
-    hidePlaceholder();
-
-
-    setState(
-      "Cámara activa",
-      "live"
-    );
-
-
-    mainInfo.innerHTML =
-      "Código de cámara: " +
-      "<strong>" +
-      pin +
-      "</strong>";
-
-
-    /*
-      Esperar llamadas.
-    */
-
-    peer.on(
-      "call",
-      function(incomingCall){
-
-        log(
-          "Llamada recibida."
-        );
-
-
-        if(!stream){
-          return;
-        }
-
-
-        activeCall =
-          incomingCall;
-
-
-        setState(
-          "Transmitiendo",
-          "live"
-        );
-
-
-        /*
-          Responder con la cámara real.
-        */
-
-        incomingCall.answer(
-          stream
-        );
-
-
-        /*
-          Optimizar después de establecer
-          la conexión.
-        */
-
-        setTimeout(
-          optimizeSender,
-          1000
-        );
-
-
-        incomingCall.on(
-          "close",
-          function(){
-
-            activeCall = null;
-
-            setState(
-              "Cámara activa",
-              "live"
-            );
-
-          }
-        );
-
-
-        incomingCall.on(
-          "error",
-          function(error){
-
-            log(
-              "Error: " +
-              errorText(error)
-            );
-
-          }
-        );
-
-      }
-    );
-
-
-  }catch(error){
-
-    setState(
-      "Error de cámara",
-      "error"
-    );
-
-
-    errorBox.textContent =
-      errorText(error);
-
-  }
-
-}
-
-
-/* =========================================================
-   MODO VISOR
-========================================================= */
-
-function startViewer(){
-
-  mode =
-    "viewer";
-
-
-  stopConnection();
-
-
-  cameraControls.classList.add(
-    "hidden"
-  );
-
-
-  remotePanel.classList.remove(
-    "hidden"
-  );
-
-
-  showPlaceholder(
-    "Modo visor",
-    "Introduce el código de 4 cifras de la cámara."
-  );
-
-
-  setState(
-    "Esperando código",
-    "wait"
-  );
-
-
-  mainInfo.textContent =
-    "El código tiene 4 cifras.";
 
 
   /*
-    Colocar automáticamente el cursor
-    en el campo del código.
-  */
+   * ============================================================
+   * STREAM FICTICIO PARA LA LLAMADA
+   * ============================================================
+   *
+   * PeerJS necesita que el visor envíe un MediaStream
+   * al iniciar la llamada.
+   *
+   * No usamos la cámara ni el micrófono del visor.
+   *
+   * Creamos un canvas pequeño que genera un stream
+   * de vídeo mínimo.
+   */
 
-  setTimeout(
-    function(){
-
-      room.focus();
-
-    },
-    100
-  );
-
-}
-
-
-/* =========================================================
-   CONECTAR VISOR
-========================================================= */
-
-async function connectViewer(){
-
-  const pin =
-    room.value.trim();
-
-
-  /*
-    SOLO cuatro números.
-  */
-
-  if(
-    !/^[0-9]{4}$/.test(pin)
-  ){
-
-    errorBox.textContent =
-      "El código debe tener exactamente 4 cifras.";
-
-    return;
-
-  }
-
-
-  errorBox.textContent = "";
-
-  quality.textContent = "";
-
-
-  showPlaceholder(
-    "Conectando...",
-    "Buscando la cámara."
-  );
-
-
-  setState(
-    "Conectando...",
-    "wait"
-  );
-
-
-  try{
-
-    /*
-      Crear Peer del visor.
-    */
-
-    await createViewerPeer();
-
-
-    /*
-      Crear stream auxiliar.
-
-      PeerJS necesita que el visor
-      proporcione un stream para iniciar
-      correctamente la llamada.
-    */
+  function createDummyStream() {
 
     const canvas =
       document.createElement("canvas");
 
-
     canvas.width = 2;
-
     canvas.height = 2;
 
 
     const ctx =
       canvas.getContext("2d");
 
-
-    ctx.fillStyle =
-      "#000";
-
+    ctx.fillStyle = "black";
 
     ctx.fillRect(
       0,
@@ -1533,649 +1511,940 @@ async function connectViewer(){
     );
 
 
-    const dummyStream =
+    const stream =
       canvas.captureStream(1);
 
 
-    log(
-      "Llamando al código " +
-      pin
-    );
+    return stream;
+
+  }
 
 
-    /*
-      MUY IMPORTANTE:
+  /*
+   * ============================================================
+   * CONECTAR VISOR
+   * ============================================================
+   */
 
-      Aquí se utiliza directamente
-      el PIN de 4 cifras.
-    */
+  async function connectViewer() {
 
-    activeCall =
-      peer.call(
-        pin,
-        dummyStream
+    const pin =
+      pinInput.value.trim();
+
+
+    if (!isValidPin(pin)) {
+
+      setStatus(
+        viewerStatus,
+        "Introduce exactamente 4 números.",
+        "error"
       );
 
-
-    if(!activeCall){
-
-      throw new Error(
-        "No se pudo crear la llamada."
-      );
+      return;
 
     }
 
 
-    /*
-      Vídeo recibido.
-    */
+    try {
 
-    activeCall.on(
-      "stream",
-      async function(remoteStream){
-
-        log(
-          "Vídeo recibido."
-        );
+      connectButton.disabled = true;
 
 
-        video.srcObject =
-          remoteStream;
+      setStatus(
+        viewerStatus,
+        "Conectando con la cámara...",
+        "warning"
+      );
 
 
-        video.muted =
-          true;
+      /*
+       * Creamos Peer del visor
+       */
 
+      if (!viewerPeer) {
 
-        video.playsInline =
-          true;
-
-
-        hidePlaceholder();
-
-
-        setState(
-          "Viendo cámara",
-          "live"
-        );
-
-
-        try{
-
-          await video.play();
-
-        }catch(e){}
-
-
-        updateQuality();
-
-
-        startStats();
-
-
-        mainInfo.textContent =
-          "Conectado a la cámara.";
+        await createViewerPeer();
 
       }
-    );
 
 
-    /*
-      Conexión cerrada.
-    */
+      /*
+       * Stream ficticio.
+       */
 
-    activeCall.on(
-      "close",
-      function(){
-
-        stopStats();
+      const dummyStream =
+        createDummyStream();
 
 
-        setState(
-          "Desconectado",
-          "error"
+      /*
+       * Realizamos llamada.
+       */
+
+      const call =
+        viewerPeer.call(
+          pin,
+          dummyStream
         );
 
 
-        showPlaceholder(
-          "Conexión cerrada",
-          "La cámara dejó de transmitir."
+      activeCall = call;
+
+
+      if (!call) {
+
+        throw new Error(
+          "No se pudo crear la llamada."
         );
 
       }
-    );
 
 
-    /*
-      Error.
-    */
+      /*
+       * STREAM RECIBIDO
+       */
 
-    activeCall.on(
-      "error",
-      function(error){
+      call.on(
+        "stream",
+        async function (remoteStream) {
 
-        setState(
-          "Error",
-          "error"
+          console.log(
+            "Stream remoto recibido:",
+            remoteStream
+          );
+
+
+          viewerVideo.srcObject =
+            remoteStream;
+
+
+          /*
+           * IMPORTANTE:
+           *
+           * Empezamos en silencio para evitar
+           * que el navegador bloquee el autoplay.
+           *
+           * El usuario tendrá que pulsar
+           * "Activar sonido".
+           */
+
+          soundEnabled = false;
+
+          viewerVideo.muted = true;
+
+          viewerVideo.volume = 1;
+
+          viewerVideo.playsInline = true;
+
+
+          try {
+
+            await viewerVideo.play();
+
+          } catch (error) {
+
+            console.warn(
+              "Autoplay bloqueado:",
+              error
+            );
+
+          }
+
+
+          /*
+           * Mostrar botón de sonido
+           */
+
+          updateSoundButton();
+
+
+          /*
+           * Comprobar si recibimos audio.
+           */
+
+          const audioTracks =
+            remoteStream.getAudioTracks();
+
+
+          if (
+            audioTracks.length > 0
+          ) {
+
+            viewerSoundIndicator.textContent =
+              "🔇 Audio disponible · pulsa Activar sonido";
+
+          } else {
+
+            viewerSoundIndicator.textContent =
+              "⚠️ El stream no contiene audio";
+
+          }
+
+
+          viewerVideoStatus.textContent =
+            "🟢 Conectado";
+
+
+          fullscreenViewerButton.disabled =
+            false;
+
+
+          setStatus(
+            viewerStatus,
+            "🟢 Conectado. Imagen recibida correctamente.",
+            "ok"
+          );
+
+
+          /*
+           * Iniciar estadísticas
+           */
+
+          startStats(call);
+
+        }
+      );
+
+
+      call.on(
+        "close",
+        function () {
+
+          console.log(
+            "Llamada cerrada"
+          );
+
+
+          activeCall = null;
+
+
+          viewerVideo.srcObject =
+            null;
+
+
+          viewerVideoStatus.textContent =
+            "Sin conexión";
+
+
+          fullscreenViewerButton.disabled =
+            true;
+
+
+          stopStats();
+
+
+          soundEnabled = false;
+
+          updateSoundButton();
+
+
+          viewerSoundIndicator.textContent =
+            "🔇 Sonido desactivado";
+
+
+          setStatus(
+            viewerStatus,
+            "La conexión se ha cerrado.",
+            "warning"
+          );
+
+
+          connectButton.disabled =
+            false;
+
+        }
+      );
+
+
+      call.on(
+        "error",
+        function (error) {
+
+          console.error(
+            "Error en llamada:",
+            error
+          );
+
+
+          setStatus(
+            viewerStatus,
+            "Error en la conexión: " +
+            error.message,
+            "error"
+          );
+
+
+          connectButton.disabled =
+            false;
+
+        }
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Error conectando:",
+        error
+      );
+
+
+      connectButton.disabled =
+        false;
+
+
+      setStatus(
+        viewerStatus,
+        "No se pudo conectar. Comprueba el código y que el móvil cámara esté activo.",
+        "error"
+      );
+
+    }
+
+  }
+
+
+  /*
+   * ============================================================
+   * ACTIVAR / DESACTIVAR SONIDO
+   * ============================================================
+   */
+
+  async function toggleSound() {
+
+    if (!viewerVideo.srcObject) {
+
+      return;
+
+    }
+
+
+    soundEnabled =
+      !soundEnabled;
+
+
+    if (soundEnabled) {
+
+      /*
+       * IMPORTANTE:
+       *
+       * Esta acción ocurre como respuesta al
+       * toque del usuario, por lo que los
+       * navegadores móviles permiten el audio.
+       */
+
+      viewerVideo.muted = false;
+
+      viewerVideo.volume = 1;
+
+
+      try {
+
+        await viewerVideo.play();
+
+      } catch (error) {
+
+        console.warn(
+          "No se pudo reproducir el audio:",
+          error
         );
 
+        soundEnabled = false;
 
-        errorBox.textContent =
-          errorText(error);
+        viewerVideo.muted = true;
 
       }
+
+
+    } else {
+
+      viewerVideo.muted = true;
+
+    }
+
+
+    updateSoundButton();
+
+  }
+
+
+  /*
+   * ============================================================
+   * ACTUALIZAR BOTÓN SONIDO
+   * ============================================================
+   */
+
+  function updateSoundButton() {
+
+    if (
+      mode !== "viewer"
+    ) {
+
+      soundButton.classList.add(
+        "hidden"
+      );
+
+      return;
+
+    }
+
+
+    if (
+      !viewerVideo.srcObject
+    ) {
+
+      soundButton.classList.add(
+        "hidden"
+      );
+
+      return;
+
+    }
+
+
+    soundButton.classList.remove(
+      "hidden"
     );
 
 
-  }catch(error){
+    if (soundEnabled) {
 
-    setState(
-      "No conectado",
-      "error"
+      soundButton.textContent =
+        "🔊 Sonido activado";
+
+      soundButton.classList.remove(
+        "secondary"
+      );
+
+      soundButton.classList.add(
+        "success"
+      );
+
+
+      viewerSoundIndicator.textContent =
+        "🔊 Sonido activado";
+
+      viewerSoundIndicator.classList.add(
+        "active"
+      );
+
+    } else {
+
+      soundButton.textContent =
+        "🔇 Activar sonido";
+
+      soundButton.classList.remove(
+        "success"
+      );
+
+      soundButton.classList.add(
+        "secondary"
+      );
+
+
+      viewerSoundIndicator.textContent =
+        "🔇 Sonido desactivado";
+
+      viewerSoundIndicator.classList.remove(
+        "active"
+      );
+
+    }
+
+  }
+
+
+  /*
+   * ============================================================
+   * ESTADÍSTICAS WEBRTC
+   * ============================================================
+   */
+
+  function startStats(call) {
+
+    stopStats();
+
+
+    if (
+      !call ||
+      !call.peerConnection
+    ) {
+
+      return;
+
+    }
+
+
+    viewerStats.classList.remove(
+      "hidden"
     );
 
 
-    errorBox.textContent =
-      "No se pudo conectar. Comprueba que el código sea correcto.";
+    statsTimer =
+      setInterval(
+        async function () {
+
+          try {
+
+            const pc =
+              call.peerConnection;
 
 
-    log(
-      errorText(error)
+            const reports =
+              await pc.getStats();
+
+
+            let packetsLost = 0;
+            let packetsReceived = 0;
+            let bytesReceived = 0;
+            let framesPerSecond = null;
+            let resolution = null;
+
+
+            reports.forEach(
+              function (report) {
+
+                if (
+                  report.type ===
+                  "inbound-rtp" &&
+                  report.kind ===
+                  "video"
+                ) {
+
+                  packetsLost =
+                    report.packetsLost || 0;
+
+                  packetsReceived =
+                    report.packetsReceived || 0;
+
+                  bytesReceived =
+                    report.bytesReceived || 0;
+
+                  framesPerSecond =
+                    report.framesPerSecond ||
+                    null;
+
+
+                  if (
+                    report.frameWidth &&
+                    report.frameHeight
+                  ) {
+
+                    resolution =
+                      report.frameWidth +
+                      "x" +
+                      report.frameHeight;
+
+                  }
+
+                }
+
+              }
+            );
+
+
+            const totalPackets =
+              packetsReceived +
+              packetsLost;
+
+
+            let lossPercent = 0;
+
+
+            if (
+              totalPackets > 0
+            ) {
+
+              lossPercent =
+                (
+                  packetsLost /
+                  totalPackets
+                ) * 100;
+
+            }
+
+
+            let fpsText =
+              framesPerSecond !== null
+                ? framesPerSecond
+                : "--";
+
+
+            let resolutionText =
+              resolution || "--";
+
+
+            viewerStats.textContent =
+              "Resolución: " +
+              resolutionText +
+              " · FPS: " +
+              fpsText +
+              " · Pérdida: " +
+              lossPercent.toFixed(1) +
+              "%";
+
+
+          } catch (error) {
+
+            console.warn(
+              "Error obteniendo estadísticas:",
+              error
+            );
+
+          }
+
+        },
+        2000
+      );
+
+  }
+
+
+  function stopStats() {
+
+    if (statsTimer) {
+
+      clearInterval(
+        statsTimer
+      );
+
+      statsTimer = null;
+
+    }
+
+
+    viewerStats.classList.add(
+      "hidden"
     );
 
   }
 
-}
+
+  /*
+   * ============================================================
+   * DESCONECTAR VISOR
+   * ============================================================
+   */
+
+  function disconnectViewer() {
+
+    if (activeCall) {
+
+      try {
+
+        activeCall.close();
+
+      } catch (e) {}
+
+      activeCall = null;
+
+    }
 
 
-/* =========================================================
-   CALIDAD
-========================================================= */
+    if (viewerPeer) {
 
-function updateQuality(){
+      try {
 
-  if(
-    !video.videoWidth ||
-    !video.videoHeight
-  ){
+        viewerPeer.destroy();
 
-    return;
+      } catch (e) {}
+
+      viewerPeer = null;
+
+    }
+
+
+    viewerVideo.srcObject =
+      null;
+
+
+    viewerVideoStatus.textContent =
+      "Sin conexión";
+
+
+    fullscreenViewerButton.disabled =
+      true;
+
+
+    connectButton.disabled =
+      false;
+
+
+    stopStats();
+
+
+    soundEnabled = false;
+
+    viewerVideo.muted = true;
+
+    updateSoundButton();
+
+
+    viewerSoundIndicator.textContent =
+      "🔇 Sonido desactivado";
+
+
+    setStatus(
+      viewerStatus,
+      "Desconectado."
+    );
 
   }
 
 
-  quality.textContent =
-    "Vídeo: " +
-    video.videoWidth +
-    "×" +
-    video.videoHeight;
+  /*
+   * ============================================================
+   * PANTALLA COMPLETA
+   * ============================================================
+   */
 
-}
+  async function fullscreenElement(element) {
+
+    try {
+
+      if (
+        document.fullscreenElement
+      ) {
+
+        await document.exitFullscreen();
+
+        return;
+
+      }
 
 
-/* =========================================================
-   ESTADÍSTICAS
-========================================================= */
+      if (
+        element.requestFullscreen
+      ) {
 
-function startStats(){
+        await element.requestFullscreen();
 
-  stopStats();
+      } else if (
+        element.webkitRequestFullscreen
+      ) {
+
+        element.webkitRequestFullscreen();
+
+      }
+
+    } catch (error) {
+
+      console.warn(
+        "Pantalla completa no disponible:",
+        error
+      );
+
+    }
+
+  }
 
 
-  statsTimer =
-    setInterval(
-      async function(){
+  /*
+   * ============================================================
+   * EVENTOS
+   * ============================================================
+   */
 
-        if(
-          !activeCall ||
-          !activeCall.peerConnection
-        ){
+  startCameraButton.addEventListener(
+    "click",
+    startCamera
+  );
 
-          return;
+
+  stopCameraButton.addEventListener(
+    "click",
+    stopCamera
+  );
+
+
+  switchCameraButton.addEventListener(
+    "click",
+    switchCamera
+  );
+
+
+  connectButton.addEventListener(
+    "click",
+    connectViewer
+  );
+
+
+  disconnectButton.addEventListener(
+    "click",
+    disconnectViewer
+  );
+
+
+  soundButton.addEventListener(
+    "click",
+    toggleSound
+  );
+
+
+  fullscreenCameraButton.addEventListener(
+    "click",
+    function () {
+
+      fullscreenElement(
+        cameraVideo
+      );
+
+    }
+  );
+
+
+  fullscreenViewerButton.addEventListener(
+    "click",
+    function () {
+
+      fullscreenElement(
+        viewerVideo
+      );
+
+    }
+  );
+
+
+  /*
+   * Permitir pulsar ENTER en el PIN
+   */
+
+  pinInput.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (
+        event.key === "Enter"
+      ) {
+
+        connectViewer();
+
+      }
+
+    }
+  );
+
+
+  /*
+   * Solo permitir números en el PIN.
+   */
+
+  pinInput.addEventListener(
+    "input",
+    function () {
+
+      this.value =
+        this.value
+          .replace(/\D/g, "")
+          .slice(0, 4);
+
+    }
+  );
+
+
+  /*
+   * ============================================================
+   * DOBLE CLICK EN VIDEO = PANTALLA COMPLETA
+   * ============================================================
+   */
+
+  cameraVideo.addEventListener(
+    "dblclick",
+    function () {
+
+      fullscreenElement(
+        cameraVideo
+      );
+
+    }
+  );
+
+
+  viewerVideo.addEventListener(
+    "dblclick",
+    function () {
+
+      fullscreenElement(
+        viewerVideo
+      );
+
+    }
+  );
+
+
+  /*
+   * ============================================================
+   * LIMPIEZA AL CERRAR
+   * ============================================================
+   */
+
+  window.addEventListener(
+    "beforeunload",
+    function () {
+
+      try {
+
+        if (cameraStream) {
+
+          cameraStream
+            .getTracks()
+            .forEach(function (track) {
+
+              track.stop();
+
+            });
 
         }
 
 
-        try{
+        if (cameraPeer) {
+          cameraPeer.destroy();
+        }
 
-          const stats =
-            await activeCall.peerConnection.getStats();
 
+        if (viewerPeer) {
+          viewerPeer.destroy();
+        }
 
-          let inbound =
-            null;
-
-
-          stats.forEach(
-            function(report){
-
-              if(
-                report.type === "inbound-rtp" &&
-                (
-                  report.kind === "video" ||
-                  report.mediaType === "video"
-                )
-              ){
-
-                inbound =
-                  report;
-
-              }
-
-            }
-          );
-
-
-          if(!inbound){
-            return;
-          }
-
-
-          const now =
-            performance.now();
-
-
-          let bitrate =
-            0;
-
-
-          if(lastStatsTime){
-
-            const seconds =
-              (
-                now -
-                lastStatsTime
-              ) / 1000;
-
-
-            const bytes =
-              (
-                inbound.bytesReceived -
-                lastBytesReceived
-              );
-
-
-            if(seconds > 0){
-
-              bitrate =
-                bytes *
-                8 /
-                seconds /
-                1000000;
-
-            }
-
-          }
-
-
-          lastBytesReceived =
-            inbound.bytesReceived || 0;
-
-
-          lastStatsTime =
-            now;
-
-
-          const width =
-            inbound.frameWidth ||
-            video.videoWidth ||
-            0;
-
-
-          const height =
-            inbound.frameHeight ||
-            video.videoHeight ||
-            0;
-
-
-          const fps =
-            inbound.framesPerSecond ||
-            0;
-
-
-          const lost =
-            inbound.packetsLost ||
-            0;
-
-
-          quality.textContent =
-            width +
-            "×" +
-            height +
-            " · " +
-            fps.toFixed(0) +
-            " FPS · " +
-            bitrate.toFixed(1) +
-            " Mbps · perdidos " +
-            lost;
-
-
-        }catch(e){}
-
-      },
-      2000
-    );
-
-}
-
-
-/* =========================================================
-   DETENER ESTADÍSTICAS
-========================================================= */
-
-function stopStats(){
-
-  if(statsTimer){
-
-    clearInterval(
-      statsTimer
-    );
-
-    statsTimer =
-      null;
-
-  }
-
-
-  lastBytesReceived =
-    0;
-
-
-  lastStatsTime =
-    0;
-
-}
-
-
-/* =========================================================
-   DETENER PEER
-========================================================= */
-
-function stopConnection(){
-
-  stopStats();
-
-
-  if(activeCall){
-
-    try{
-
-      activeCall.close();
-
-    }catch(e){}
-
-
-    activeCall =
-      null;
-
-  }
-
-
-  if(peer){
-
-    try{
-
-      peer.destroy();
-
-    }catch(e){}
-
-
-    peer =
-      null;
-
-  }
-
-}
-
-
-/* =========================================================
-   APAGAR TODO
-========================================================= */
-
-function stopAll(){
-
-  stopConnection();
-
-
-  if(stream){
-
-    stream.getTracks().forEach(
-      function(track){
-
-        try{
-
-          track.stop();
-
-        }catch(e){}
-
-      }
-    );
-
-
-    stream =
-      null;
-
-  }
-
-
-  video.srcObject =
-    null;
-
-
-  quality.textContent =
-    "";
-
-
-  errorBox.textContent =
-    "";
-
-
-  pinDisplay.textContent =
-    "";
-
-
-  pinDisplay.classList.add(
-    "hidden"
-  );
-
-
-  setState(
-    "Apagado"
-  );
-
-
-  showPlaceholder(
-    "Monitor de habitación",
-    "Selecciona Modo cámara o Modo visor."
-  );
-
-}
-
-
-/* =========================================================
-   BOTÓN MODO CÁMARA
-========================================================= */
-
-document.getElementById(
-  "cameraMode"
-).onclick =
-function(){
-
-  remotePanel.classList.add(
-    "hidden"
-  );
-
-
-  cameraControls.classList.remove(
-    "hidden"
-  );
-
-
-  startCamera();
-
-};
-
-
-/* =========================================================
-   BOTÓN MODO VISOR
-========================================================= */
-
-document.getElementById(
-  "viewerMode"
-).onclick =
-function(){
-
-  stopAll();
-
-
-  startViewer();
-
-};
-
-
-/* =========================================================
-   BOTÓN ACTIVAR CÁMARA
-========================================================= */
-
-document.getElementById(
-  "start"
-).onclick =
-function(){
-
-  startCamera();
-
-};
-
-
-/* =========================================================
-   BOTÓN APAGAR
-========================================================= */
-
-document.getElementById(
-  "stop"
-).onclick =
-function(){
-
-  stopAll();
-
-};
-
-
-/* =========================================================
-   CAMBIAR CÁMARA
-========================================================= */
-
-document.getElementById(
-  "flip"
-).onclick =
-function(){
-
-  rearCamera =
-    !rearCamera;
-
-
-  startCamera();
-
-};
-
-
-/* =========================================================
-   CONECTAR
-========================================================= */
-
-document.getElementById(
-  "connect"
-).onclick =
-function(){
-
-  connectViewer();
-
-};
-
-
-/* =========================================================
-   CAMPO PIN
-========================================================= */
-
-/*
-  Solo permitir números.
-*/
-
-room.addEventListener(
-  "input",
-  function(){
-
-    room.value =
-      room.value
-        .replace(/\D/g,"")
-        .slice(0,4);
-
-  }
-);
-
-
-/*
-  Enter = conectar.
-*/
-
-room.addEventListener(
-  "keydown",
-  function(event){
-
-    if(
-      event.key === "Enter"
-    ){
-
-      connectViewer();
+      } catch (e) {}
 
     }
-
-  }
-);
+  );
 
 
-/* =========================================================
-   DOBLE CLICK = PANTALLA COMPLETA
-========================================================= */
+  /*
+   * ============================================================
+   * INICIO
+   * ============================================================
+   */
 
-document.addEventListener(
-  "dblclick",
-  async function(){
+  mode = "camera";
 
-    try{
+  cameraPanel.classList.remove(
+    "hidden"
+  );
 
-      if(
-        !document.fullscreenElement
-      ){
-
-        await document
-          .documentElement
-          .requestFullscreen();
-
-      }
-
-    }catch(e){}
-
-  }
-);
+  viewerPanel.classList.add(
+    "hidden"
+  );
 
 
-/* =========================================================
-   INICIO
-========================================================= */
+  console.log(
+    "Sistema de vigilancia iniciado."
+  );
 
-setState(
-  "Listo"
-);
+  console.log(
+    "Cámara: 1280x720 / 30 FPS"
+  );
 
+  console.log(
+    "Audio: micrófono activado"
+  );
 
-showPlaceholder(
-  "Monitor de habitación",
-  "En el móvil de la habitación pulsa «Modo cámara». En el otro móvil pulsa «Modo visor»."
-);
+  console.log(
+    "PIN: 4 dígitos"
+  );
 
 </script>
 
 </body>
-
 </html>
