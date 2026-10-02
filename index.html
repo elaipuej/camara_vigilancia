@@ -34,12 +34,7 @@ body{
   height:100%;
   background:var(--bg);
   color:var(--text);
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
 body{
@@ -53,12 +48,11 @@ body{
 }
 
 header{
-  height:60px;
+  height:58px;
   flex:none;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:12px;
   padding:0 15px;
   background:#080a0f;
   border-bottom:1px solid var(--line);
@@ -67,7 +61,6 @@ header{
 h1{
   margin:0;
   font-size:17px;
-  font-weight:700;
 }
 
 .status{
@@ -81,14 +74,13 @@ h1{
 .dot{
   width:8px;
   height:8px;
-  flex:none;
   border-radius:50%;
   background:#596273;
 }
 
 .dot.live{
   background:var(--accent);
-  box-shadow:0 0 12px rgba(105,230,165,.65);
+  box-shadow:0 0 12px rgba(105,230,165,.7);
 }
 
 .dot.wait{
@@ -109,7 +101,7 @@ main{
 .viewer{
   position:relative;
   flex:1;
-  min-height:300px;
+  min-height:280px;
   background:#000;
   overflow:hidden;
   display:flex;
@@ -118,21 +110,11 @@ main{
 }
 
 #video{
-  display:block;
   width:100%;
   height:100%;
+  display:block;
   background:#000;
-
-  /*
-    contain evita recortar la imagen.
-  */
   object-fit:contain;
-
-  /*
-    Evita filtros o transformaciones
-    que puedan consumir recursos.
-  */
-  transform:none;
 }
 
 .placeholder{
@@ -143,12 +125,7 @@ main{
   justify-content:center;
   padding:25px;
   text-align:center;
-  background:
-    radial-gradient(
-      circle at 50% 40%,
-      #171d28,
-      #000 75%
-    );
+  background:radial-gradient(circle at 50% 40%,#171d28,#000 75%);
 }
 
 .placeholder.hidden{
@@ -156,11 +133,11 @@ main{
 }
 
 .card{
-  max-width:410px;
+  max-width:420px;
 }
 
-.card-icon{
-  font-size:42px;
+.icon{
+  font-size:44px;
   margin-bottom:10px;
 }
 
@@ -176,6 +153,15 @@ main{
   font-size:14px;
 }
 
+.pin{
+  margin:18px 0;
+  font-size:42px;
+  letter-spacing:10px;
+  font-weight:800;
+  color:var(--accent);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+
 .controls{
   display:flex;
   gap:8px;
@@ -187,7 +173,7 @@ main{
 
 button{
   flex:1;
-  min-width:115px;
+  min-width:110px;
   border:0;
   border-radius:11px;
   padding:12px 14px;
@@ -212,7 +198,7 @@ button:active{
 }
 
 #remotePanel{
-  padding:12px;
+  padding:14px 12px;
   background:var(--panel2);
   border-top:1px solid var(--line);
 }
@@ -220,14 +206,18 @@ button:active{
 #room{
   display:block;
   width:100%;
-  padding:12px;
-  margin:0 0 8px;
+  padding:14px;
+  margin-bottom:8px;
   border:1px solid var(--line);
-  border-radius:10px;
+  border-radius:11px;
   outline:none;
   background:#11151d;
   color:var(--text);
   font:inherit;
+  font-size:22px;
+  text-align:center;
+  letter-spacing:7px;
+  font-weight:700;
 }
 
 #room:focus{
@@ -245,33 +235,13 @@ button:active{
 
 #quality{
   color:var(--accent);
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  margin-top:3px;
 }
 
 #error{
   color:#ff9aa4;
   margin-top:4px;
-}
-
-#diagnostic{
-  display:none;
-  max-height:150px;
-  overflow:auto;
-  padding:8px 12px;
-  background:#05070a;
-  border-top:1px solid var(--line);
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
-  font-size:10px;
-  line-height:1.4;
-  white-space:pre-wrap;
 }
 
 .hidden{
@@ -288,8 +258,8 @@ button:active{
     min-height:260px;
   }
 
-  button{
-    min-width:100px;
+  .pin{
+    font-size:36px;
   }
 
 }
@@ -323,7 +293,6 @@ button:active{
 
 </header>
 
-
 <main>
 
 <section class="viewer">
@@ -340,15 +309,20 @@ button:active{
 
     <div class="card">
 
-      <div class="card-icon">📷</div>
+      <div class="icon">📷</div>
 
       <h2 id="placeholderTitle">
         Monitor de habitación
       </h2>
 
       <p id="placeholderText">
-        Selecciona el modo cámara o el modo visor.
+        Selecciona el modo que quieres utilizar.
       </p>
+
+      <div
+        id="pinDisplay"
+        class="pin hidden">
+      </div>
 
     </div>
 
@@ -403,7 +377,7 @@ button:active{
 </div>
 
 
-<!-- PANEL VISOR -->
+<!-- VISOR -->
 
 <div
   id="remotePanel"
@@ -411,11 +385,12 @@ button:active{
 
   <input
     id="room"
-    type="text"
-    placeholder="Código de la cámara"
-    autocomplete="off"
-    autocapitalize="none"
-    spellcheck="false">
+    type="tel"
+    inputmode="numeric"
+    maxlength="4"
+    pattern="[0-9]{4}"
+    placeholder="0000"
+    autocomplete="off">
 
   <button
     id="connect"
@@ -425,8 +400,6 @@ button:active{
 
 </div>
 
-
-<!-- INFORMACIÓN -->
 
 <div class="info">
 
@@ -440,9 +413,6 @@ button:active{
 
 </div>
 
-
-<div id="diagnostic"></div>
-
 </main>
 
 </div>
@@ -454,23 +424,16 @@ button:active{
 
 
 /* =========================================================
-   CONFIGURACIÓN DE BAJA LATENCIA
+   CONFIGURACIÓN DE VÍDEO
 ========================================================= */
-
-/*
-  720p es mucho más ligero que 1080p y normalmente
-  ofrece una conexión bastante más estable en móviles.
-
-  Si la red es buena, 720p/30 puede verse muy bien
-  para vigilancia de una habitación.
-*/
 
 const CAMERA_WIDTH = 1280;
 const CAMERA_HEIGHT = 720;
 const CAMERA_FPS = 30;
 
 /*
-  2.5 Mbps es un punto de partida razonable para 720p.
+  2,5 Mbps máximo.
+  Está pensado para mantener la fluidez.
 */
 const MAX_BITRATE = 2500000;
 
@@ -491,6 +454,9 @@ const placeholderTitle =
 const placeholderText =
   document.getElementById("placeholderText");
 
+const pinDisplay =
+  document.getElementById("pinDisplay");
+
 const state =
   document.getElementById("state");
 
@@ -505,9 +471,6 @@ const quality =
 
 const errorBox =
   document.getElementById("error");
-
-const diagnostic =
-  document.getElementById("diagnostic");
 
 const remotePanel =
   document.getElementById("remotePanel");
@@ -531,6 +494,8 @@ let mode = null;
 
 let rearCamera = true;
 
+let cameraPin = null;
+
 let statsTimer = null;
 
 let lastBytesReceived = 0;
@@ -538,7 +503,7 @@ let lastStatsTime = 0;
 
 
 /* =========================================================
-   ESTADO
+   UTILIDADES
 ========================================================= */
 
 function setState(text,type="normal"){
@@ -564,9 +529,11 @@ function setState(text,type="normal"){
 
 function showPlaceholder(title,text){
 
-  placeholderTitle.textContent = title;
+  placeholderTitle.textContent =
+    title;
 
-  placeholderText.textContent = text;
+  placeholderText.textContent =
+    text;
 
   placeholder.classList.remove(
     "hidden"
@@ -609,228 +576,354 @@ function errorText(error){
 
 
 /* =========================================================
-   DIAGNÓSTICO
+   GENERAR PIN DE 4 CIFRAS
+========================================================= */
+
+function generatePin(){
+
+  return String(
+    Math.floor(
+      1000 +
+      Math.random() * 9000
+    )
+  );
+
+}
+
+
+/* =========================================================
+   CREAR PEER CON PIN
+========================================================= */
+
+function createCameraPeer(){
+
+  return new Promise(
+    function(resolve,reject){
+
+      const pin =
+        generatePin();
+
+
+      log(
+        "Solicitando PIN " +
+        pin
+      );
+
+
+      const newPeer =
+        new Peer(
+          pin,
+          {
+            debug:1,
+
+            config:{
+              iceServers:[
+                {
+                  urls:
+                    "stun:stun.l.google.com:19302"
+                },
+                {
+                  urls:
+                    "stun:stun1.l.google.com:19302"
+                }
+              ]
+            }
+          }
+        );
+
+
+      let finished = false;
+
+
+      newPeer.on(
+        "open",
+        function(id){
+
+          if(finished){
+            return;
+          }
+
+          finished = true;
+
+          peer =
+            newPeer;
+
+          cameraPin =
+            id;
+
+          resolve(id);
+
+        }
+      );
+
+
+      newPeer.on(
+        "error",
+        function(error){
+
+          /*
+            Si el PIN ya está ocupado,
+            generamos otro automáticamente.
+          */
+
+          if(
+            error &&
+            (
+              error.type ===
+                "unavailable-id" ||
+              error.type ===
+                "server-error"
+            )
+          ){
+
+            try{
+              newPeer.destroy();
+            }catch(e){}
+
+            if(!finished){
+
+              finished = true;
+
+              /*
+                Volver a intentarlo
+                con otro PIN.
+              */
+
+              setTimeout(
+                function(){
+
+                  createCameraPeer()
+                    .then(resolve)
+                    .catch(reject);
+
+                },
+                300
+              );
+
+            }
+
+            return;
+
+          }
+
+
+          if(!finished){
+
+            finished = true;
+
+            reject(error);
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   PEER VISOR
+========================================================= */
+
+function createViewerPeer(){
+
+  return new Promise(
+    function(resolve,reject){
+
+      const newPeer =
+        new Peer(
+          undefined,
+          {
+            debug:1,
+
+            config:{
+              iceServers:[
+                {
+                  urls:
+                    "stun:stun.l.google.com:19302"
+                },
+                {
+                  urls:
+                    "stun:stun1.l.google.com:19302"
+                }
+              ]
+            }
+          }
+        );
+
+
+      newPeer.on(
+        "open",
+        function(){
+
+          peer =
+            newPeer;
+
+          resolve(newPeer);
+
+        }
+      );
+
+
+      newPeer.on(
+        "error",
+        function(error){
+
+          reject(error);
+
+        }
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   LOG
 ========================================================= */
 
 function log(message){
 
-  const line =
-    document.createElement("div");
-
-  line.textContent =
+  console.log(
     "[" +
     new Date().toLocaleTimeString() +
     "] " +
-    message;
-
-  diagnostic.appendChild(line);
-
-  diagnostic.scrollTop =
-    diagnostic.scrollHeight;
-
-  console.log(message);
+    message
+  );
 
 }
 
 
 /* =========================================================
-   CREAR PEER
+   OPTIMIZAR EMISIÓN WEBRTC
 ========================================================= */
 
-function createPeer(){
+async function optimizeSender(){
 
-  if(peer){
-
-    try{
-      peer.destroy();
-    }catch(e){}
-
-    peer = null;
-
+  if(!activeCall){
+    return;
   }
 
 
-  peer = new Peer({
-
-    debug:1,
-
-    config:{
-      iceServers:[
-        {
-          urls:"stun:stun.l.google.com:19302"
-        },
-        {
-          urls:"stun:stun1.l.google.com:19302"
-        }
-      ]
-    }
-
-  });
+  const pc =
+    activeCall.peerConnection;
 
 
-  peer.on(
-    "open",
-    function(id){
-
-      log(
-        "Peer conectado: " + id
-      );
+  if(!pc){
+    return;
+  }
 
 
-      if(mode === "camera"){
-
-        setState(
-          "Cámara lista",
-          "live"
-        );
+  const senders =
+    pc.getSenders();
 
 
-        mainInfo.innerHTML =
-          "Código de cámara:<br>" +
-          "<strong>" +
-          id +
-          "</strong><br>" +
-          "Introduce este código en el móvil visor.";
+  for(
+    const sender of senders
+  ){
 
-      }
+    if(
+      !sender.track ||
+      sender.track.kind !== "video"
+    ){
+
+      continue;
 
     }
-  );
 
 
-  peer.on(
-    "call",
-    function(incomingCall){
+    try{
 
-      log(
-        "Llamada recibida."
-      );
+      const params =
+        sender.getParameters();
 
 
-      if(mode !== "camera"){
+      if(
+        !params.encodings ||
+        !params.encodings.length
+      ){
 
-        log(
-          "No estoy en modo cámara."
-        );
-
-        return;
+        params.encodings = [{}];
 
       }
 
 
-      if(!stream){
-
-        log(
-          "No hay stream de cámara."
-        );
-
-        return;
-
-      }
-
-
-      activeCall =
-        incomingCall;
-
-
-      setState(
-        "Enviando vídeo",
-        "wait"
-      );
+      const encoding =
+        params.encodings[0];
 
 
       /*
-        Enviar el stream real.
+        Bitrate máximo de 2,5 Mbps.
       */
 
-      incomingCall.answer(
-        stream
-      );
+      encoding.maxBitrate =
+        MAX_BITRATE;
+
+
+      encoding.maxFramerate =
+        CAMERA_FPS;
 
 
       /*
-        Esperamos a que WebRTC cree
-        el RTCPeerConnection.
+        No reducir artificialmente
+        la resolución.
       */
 
-      setTimeout(
-        optimizeSender,
-        1000
+      encoding.scaleResolutionDownBy =
+        1;
+
+
+      if(
+        "priority" in encoding
+      ){
+
+        encoding.priority =
+          "high";
+
+      }
+
+
+      if(
+        "degradationPreference" in params
+      ){
+
+        params.degradationPreference =
+          "maintain-resolution";
+
+      }
+
+
+      await sender.setParameters(
+        params
       );
 
-
-      incomingCall.on(
-        "close",
-        function(){
-
-          log(
-            "Visor desconectado."
-          );
-
-          activeCall = null;
-
-          setState(
-            "Cámara lista",
-            "live"
-          );
-
-        }
-      );
-
-
-      incomingCall.on(
-        "error",
-        function(error){
-
-          log(
-            "Error de llamada: " +
-            errorText(error)
-          );
-
-        }
-      );
-
-    }
-  );
-
-
-  peer.on(
-    "error",
-    function(error){
 
       log(
-        "Error PeerJS: " +
+        "WebRTC optimizado: 720p / 30 FPS / 2,5 Mbps."
+      );
+
+
+    }catch(error){
+
+      log(
+        "No se pudieron aplicar todos los parámetros: " +
         errorText(error)
       );
 
-      setState(
-        "Error",
-        "error"
-      );
-
-      errorBox.textContent =
-        errorText(error);
-
     }
-  );
 
-
-  peer.on(
-    "disconnected",
-    function(){
-
-      log(
-        "Peer desconectado."
-      );
-
-    }
-  );
+  }
 
 }
 
 
 /* =========================================================
-   CÁMARA
+   INICIAR CÁMARA
 ========================================================= */
 
 async function startCamera(){
@@ -843,10 +936,12 @@ async function startCamera(){
 
   stopConnection();
 
+
   showPlaceholder(
     "Activando cámara...",
-    "Configurando vídeo 720p de baja latencia."
+    "Configurando vídeo de baja latencia."
   );
+
 
   setState(
     "Activando cámara",
@@ -854,30 +949,7 @@ async function startCamera(){
   );
 
 
-  if(
-    !navigator.mediaDevices ||
-    !navigator.mediaDevices.getUserMedia
-  ){
-
-    errorBox.textContent =
-      "Este navegador no permite acceder a la cámara. Utiliza HTTPS.";
-
-    setState(
-      "Cámara no disponible",
-      "error"
-    );
-
-    return;
-
-  }
-
-
   try{
-
-    log(
-      "Solicitando 1280×720 @ 30 FPS."
-    );
-
 
     stream =
       await navigator.mediaDevices.getUserMedia({
@@ -899,12 +971,8 @@ async function startCamera(){
 
           facingMode:
             rearCamera
-              ? {
-                  ideal:"environment"
-                }
-              : {
-                  ideal:"user"
-                }
+              ? {ideal:"environment"}
+              : {ideal:"user"}
 
         },
 
@@ -919,35 +987,14 @@ async function startCamera(){
 
     if(track){
 
-      /*
-        Para vigilancia con movimiento,
-        pedimos al encoder priorizar movimiento
-        y baja latencia.
-      */
-
       try{
-
         track.contentHint =
           "motion";
-
       }catch(e){}
 
 
       const settings =
         track.getSettings();
-
-
-      log(
-        "Cámara real: " +
-        (settings.width || "?") +
-        "×" +
-        (settings.height || "?") +
-        " @ " +
-        Math.round(
-          settings.frameRate || 0
-        ) +
-        " FPS."
-      );
 
 
       quality.textContent =
@@ -980,232 +1027,134 @@ async function startCamera(){
     hidePlaceholder();
 
 
+    /*
+      Crear PIN de 4 cifras.
+    */
+
+    const pin =
+      await createCameraPeer();
+
+
+    pinDisplay.textContent =
+      pin;
+
+
+    pinDisplay.classList.remove(
+      "hidden"
+    );
+
+
+    placeholderTitle.textContent =
+      "Código de conexión";
+
+
+    placeholderText.textContent =
+      "Introduce este código de 4 cifras en el otro móvil.";
+
+
+    /*
+      El vídeo local sigue visible.
+      Ocultamos el PIN cuando empieza
+      la visualización local.
+    */
+
+    hidePlaceholder();
+
+
     setState(
       "Cámara activa",
       "live"
     );
 
 
+    mainInfo.innerHTML =
+      "Código de cámara: " +
+      "<strong>" +
+      pin +
+      "</strong>";
+
     /*
-      Crear conexión Peer.
+      Escuchar llamadas.
     */
 
-    createPeer();
+    peer.on(
+      "call",
+      function(incomingCall){
+
+        log(
+          "Llamada recibida."
+        );
+
+
+        if(!stream){
+
+          return;
+
+        }
+
+
+        activeCall =
+          incomingCall;
+
+
+        setState(
+          "Transmitiendo",
+          "live"
+        );
+
+
+        incomingCall.answer(
+          stream
+        );
+
+
+        setTimeout(
+          optimizeSender,
+          1000
+        );
+
+
+        incomingCall.on(
+          "close",
+          function(){
+
+            activeCall = null;
+
+            setState(
+              "Cámara activa",
+              "live"
+            );
+
+          }
+        );
+
+
+        incomingCall.on(
+          "error",
+          function(error){
+
+            log(
+              "Error: " +
+              errorText(error)
+            );
+
+          }
+        );
+
+      }
+    );
 
 
   }catch(error){
 
-    log(
-      "Error cámara: " +
-      errorText(error)
+    setState(
+      "Error de cámara",
+      "error"
     );
 
 
-    /*
-      Intento de respaldo.
-    */
-
-    try{
-
-      log(
-        "Intentando 640×480 como respaldo."
-      );
-
-
-      stream =
-        await navigator.mediaDevices.getUserMedia({
-
-          video:{
-            width:{
-              ideal:640
-            },
-
-            height:{
-              ideal:480
-            },
-
-            frameRate:{
-              ideal:24,
-              max:30
-            },
-
-            facingMode:
-              rearCamera
-                ? {
-                    ideal:"environment"
-                  }
-                : {
-                    ideal:"user"
-                  }
-          },
-
-          audio:false
-
-        });
-
-
-      video.srcObject =
-        stream;
-
-
-      hidePlaceholder();
-
-
-      setState(
-        "Cámara activa",
-        "live"
-      );
-
-
-      createPeer();
-
-
-    }catch(error2){
-
-      setState(
-        "Error de cámara",
-        "error"
-      );
-
-      errorBox.textContent =
-        errorText(error2);
-
-    }
-
-  }
-
-}
-
-
-/* =========================================================
-   OPTIMIZAR SENDER WEBRTC
-========================================================= */
-
-async function optimizeSender(){
-
-  if(!activeCall){
-
-    return;
-
-  }
-
-
-  const pc =
-    activeCall.peerConnection;
-
-
-  if(!pc){
-
-    return;
-
-  }
-
-
-  const senders =
-    pc.getSenders();
-
-
-  for(
-    const sender of senders
-  ){
-
-    if(
-      !sender.track ||
-      sender.track.kind !== "video"
-    ){
-      continue;
-    }
-
-
-    try{
-
-      const params =
-        sender.getParameters();
-
-
-      if(
-        !params.encodings ||
-        !params.encodings.length
-      ){
-
-        params.encodings = [{}];
-
-      }
-
-
-      const encoding =
-        params.encodings[0];
-
-
-      /*
-        Límite razonable para 720p.
-        Evita saturar la red móvil/Wi-Fi.
-      */
-
-      encoding.maxBitrate =
-        MAX_BITRATE;
-
-
-      encoding.maxFramerate =
-        CAMERA_FPS;
-
-
-      /*
-        No reducir artificialmente
-        la resolución.
-      */
-
-      encoding.scaleResolutionDownBy =
-        1;
-
-
-      /*
-        Prioridad alta para vídeo.
-      */
-
-      if(
-        "priority" in encoding
-      ){
-
-        encoding.priority =
-          "high";
-
-      }
-
-
-      /*
-        Intentar mantener resolución.
-      */
-
-      if(
-        "degradationPreference" in params
-      ){
-
-        params.degradationPreference =
-          "maintain-resolution";
-
-      }
-
-
-      await sender.setParameters(
-        params
-      );
-
-
-      log(
-        "WebRTC configurado: " +
-        "720p / 30 FPS / 2.5 Mbps."
-      );
-
-
-    }catch(error){
-
-      log(
-        "No se pudieron aplicar todos los parámetros WebRTC: " +
-        errorText(error)
-      );
-
-    }
+    errorBox.textContent =
+      errorText(error);
 
   }
 
@@ -1230,22 +1179,21 @@ function startViewer(){
     "hidden"
   );
 
-  quality.textContent = "";
-
-  errorBox.textContent = "";
 
   showPlaceholder(
     "Modo visor",
-    "Introduce el código del móvil que está en la habitación."
+    "Introduce el código de 4 cifras de la cámara."
   );
+
 
   setState(
     "Esperando código",
     "wait"
   );
 
+
   mainInfo.textContent =
-    "Introduce el código de la cámara y pulsa Conectar.";
+    "El código tiene 4 cifras.";
 
 }
 
@@ -1254,25 +1202,26 @@ function startViewer(){
    CONECTAR VISOR
 ========================================================= */
 
-function connectViewer(){
+async function connectViewer(){
 
-  const cameraId =
+  const pin =
     room.value.trim();
 
 
-  if(!cameraId){
+  /*
+    Solo aceptamos exactamente
+    cuatro números.
+  */
+
+  if(!/^[0-9]{4}$/.test(pin)){
 
     errorBox.textContent =
-      "Introduce el código de la cámara.";
+      "El código debe tener exactamente 4 cifras.";
 
     return;
 
   }
 
-
-  mode = "viewer";
-
-  stopConnection();
 
   errorBox.textContent = "";
 
@@ -1281,7 +1230,7 @@ function connectViewer(){
 
   showPlaceholder(
     "Conectando...",
-    "Estableciendo vídeo de baja latencia."
+    "Buscando la cámara."
   );
 
 
@@ -1291,188 +1240,178 @@ function connectViewer(){
   );
 
 
-  log(
-    "Conectando con cámara: " +
-    cameraId
-  );
+  try{
+
+    /*
+      Peer del visor.
+    */
+
+    await createViewerPeer();
 
 
-  /*
-    Stream auxiliar.
-    PeerJS necesita un MediaStream
-    para iniciar la llamada.
-  */
+    /*
+      Stream auxiliar.
+    */
 
-  const canvas =
-    document.createElement("canvas");
+    const canvas =
+      document.createElement("canvas");
 
-  canvas.width = 2;
-  canvas.height = 2;
+    canvas.width = 2;
+    canvas.height = 2;
 
 
-  const ctx =
-    canvas.getContext("2d");
+    const ctx =
+      canvas.getContext("2d");
 
-  ctx.fillStyle =
-    "#000";
+    ctx.fillStyle =
+      "#000";
 
-  ctx.fillRect(
-    0,
-    0,
-    2,
-    2
-  );
-
-
-  const dummyStream =
-    canvas.captureStream(1);
+    ctx.fillRect(
+      0,
+      0,
+      2,
+      2
+    );
 
 
-  createPeer();
+    const dummyStream =
+      canvas.captureStream(1);
 
 
-  peer.once(
-    "open",
-    function(){
+    log(
+      "Llamando al PIN " +
+      pin
+    );
 
-      log(
-        "Peer visor listo."
+
+    activeCall =
+      peer.call(
+        pin,
+        dummyStream
       );
 
 
-      activeCall =
-        peer.call(
-          cameraId,
-          dummyStream
-        );
+    if(!activeCall){
 
-
-      if(!activeCall){
-
-        errorBox.textContent =
-          "No se pudo iniciar la llamada.";
-
-        return;
-
-      }
-
-
-      activeCall.on(
-        "stream",
-        async function(remoteStream){
-
-          log(
-            "Vídeo recibido."
-          );
-
-
-          video.srcObject =
-            remoteStream;
-
-
-          video.muted =
-            true;
-
-
-          video.playsInline =
-            true;
-
-
-          hidePlaceholder();
-
-
-          setState(
-            "Viendo cámara",
-            "live"
-          );
-
-
-          try{
-
-            await video.play();
-
-          }catch(error){
-
-            log(
-              "El navegador necesita interacción para reproducir."
-            );
-
-          }
-
-
-          updateRemoteQuality();
-
-
-          startStats();
-
-
-          mainInfo.textContent =
-            "Conectado al móvil de la habitación.";
-
-        }
-      );
-
-
-      activeCall.on(
-        "close",
-        function(){
-
-          log(
-            "Conexión cerrada."
-          );
-
-
-          setState(
-            "Desconectado",
-            "error"
-          );
-
-
-          stopStats();
-
-
-          showPlaceholder(
-            "Conexión cerrada",
-            "El móvil de la habitación dejó de transmitir."
-          );
-
-        }
-      );
-
-
-      activeCall.on(
-        "error",
-        function(error){
-
-          log(
-            "Error WebRTC: " +
-            errorText(error)
-          );
-
-
-          setState(
-            "Error",
-            "error"
-          );
-
-
-          errorBox.textContent =
-            errorText(error);
-
-        }
+      throw new Error(
+        "No se pudo crear la llamada."
       );
 
     }
-  );
+
+
+    activeCall.on(
+      "stream",
+      async function(remoteStream){
+
+        log(
+          "Vídeo recibido."
+        );
+
+
+        video.srcObject =
+          remoteStream;
+
+
+        video.muted =
+          true;
+
+
+        video.playsInline =
+          true;
+
+
+        hidePlaceholder();
+
+
+        setState(
+          "Viendo cámara",
+          "live"
+        );
+
+
+        try{
+
+          await video.play();
+
+        }catch(e){}
+
+
+        updateQuality();
+
+        startStats();
+
+
+        mainInfo.textContent =
+          "Conectado a la cámara.";
+
+      }
+    );
+
+
+    activeCall.on(
+      "close",
+      function(){
+
+        stopStats();
+
+        setState(
+          "Desconectado",
+          "error"
+        );
+
+
+        showPlaceholder(
+          "Conexión cerrada",
+          "La cámara dejó de transmitir."
+        );
+
+      }
+    );
+
+
+    activeCall.on(
+      "error",
+      function(error){
+
+        setState(
+          "Error",
+          "error"
+        );
+
+
+        errorBox.textContent =
+          errorText(error);
+
+      }
+    );
+
+
+  }catch(error){
+
+    setState(
+      "No conectado",
+      "error"
+    );
+
+
+    errorBox.textContent =
+      "No se pudo conectar. Comprueba que el código sea correcto.";
+
+    log(
+      errorText(error)
+    );
+
+  }
 
 }
 
 
 /* =========================================================
-   CALIDAD RECIBIDA
+   CALIDAD
 ========================================================= */
 
-function updateRemoteQuality(){
+function updateQuality(){
 
   if(
     !video.videoWidth ||
@@ -1485,7 +1424,7 @@ function updateRemoteQuality(){
 
 
   quality.textContent =
-    "Recibiendo: " +
+    "Vídeo: " +
     video.videoWidth +
     "×" +
     video.videoHeight;
@@ -1494,7 +1433,7 @@ function updateRemoteQuality(){
 
 
 /* =========================================================
-   ESTADÍSTICAS WEBRTC
+   ESTADÍSTICAS
 ========================================================= */
 
 function startStats(){
@@ -1545,9 +1484,7 @@ function startStats(){
 
 
           if(!inbound){
-
             return;
-
           }
 
 
@@ -1558,9 +1495,7 @@ function startStats(){
           let bitrate = 0;
 
 
-          if(
-            lastStatsTime > 0
-          ){
+          if(lastStatsTime){
 
             const seconds =
               (
@@ -1579,11 +1514,10 @@ function startStats(){
             if(seconds > 0){
 
               bitrate =
-                (
-                  bytes *
-                  8 /
-                  seconds
-                ) / 1000000;
+                bytes *
+                8 /
+                seconds /
+                1000000;
 
             }
 
@@ -1592,7 +1526,6 @@ function startStats(){
 
           lastBytesReceived =
             inbound.bytesReceived || 0;
-
 
           lastStatsTime =
             now;
@@ -1632,32 +1565,7 @@ function startStats(){
             lost;
 
 
-          /*
-            Si hay demasiada pérdida,
-            avisamos sin cortar la conexión.
-          */
-
-          if(lost > 30){
-
-            mainInfo.textContent =
-              "La red está perdiendo paquetes. " +
-              "La calidad puede reducirse para mantener la fluidez.";
-
-          }else{
-
-            mainInfo.textContent =
-              "Conexión estable.";
-
-          }
-
-        }catch(error){
-
-          /*
-            Algunos navegadores limitan getStats.
-            No es motivo para cortar el vídeo.
-          */
-
-        }
+        }catch(e){}
 
       },
       2000
@@ -1667,7 +1575,7 @@ function startStats(){
 
 
 /* =========================================================
-   PARAR ESTADÍSTICAS
+   DETENER ESTADÍSTICAS
 ========================================================= */
 
 function stopStats(){
@@ -1682,6 +1590,7 @@ function stopStats(){
 
   }
 
+
   lastBytesReceived = 0;
 
   lastStatsTime = 0;
@@ -1690,7 +1599,7 @@ function stopStats(){
 
 
 /* =========================================================
-   DETENER CONEXIONES
+   DETENER PEER
 ========================================================= */
 
 function stopConnection(){
@@ -1748,7 +1657,8 @@ function stopAll(){
   }
 
 
-  video.srcObject = null;
+  video.srcObject =
+    null;
 
 
   quality.textContent = "";
@@ -1767,23 +1677,6 @@ function stopAll(){
   );
 
 }
-
-
-/* =========================================================
-   CAMBIAR CÁMARA
-========================================================= */
-
-document.getElementById(
-  "flip"
-).onclick =
-function(){
-
-  rearCamera =
-    !rearCamera;
-
-  startCamera();
-
-};
 
 
 /* =========================================================
@@ -1841,6 +1734,19 @@ function(){
 
 
 document.getElementById(
+  "flip"
+).onclick =
+function(){
+
+  rearCamera =
+    !rearCamera;
+
+  startCamera();
+
+};
+
+
+document.getElementById(
   "connect"
 ).onclick =
 function(){
@@ -1848,6 +1754,23 @@ function(){
   connectViewer();
 
 };
+
+
+/*
+  Solo permitir números.
+*/
+
+room.addEventListener(
+  "input",
+  function(){
+
+    room.value =
+      room.value
+        .replace(/\D/g,"")
+        .slice(0,4);
+
+  }
+);
 
 
 room.addEventListener(
@@ -1896,7 +1819,7 @@ setState(
 
 showPlaceholder(
   "Monitor de habitación",
-  "Usa Modo cámara en el móvil que se queda en la habitación y Modo visor en el otro móvil."
+  "En el móvil de la habitación pulsa «Modo cámara». En el otro móvil pulsa «Modo visor»."
 );
 
 </script>
